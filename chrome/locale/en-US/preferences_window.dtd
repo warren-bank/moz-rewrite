@@ -1,0 +1,21 @@
+<!ENTITY prefwindow.Moz_Rewrite.title.window "moz-rewrite: user preferences">
+<!ENTITY prefwindow.Moz_Rewrite.title.pane "General Options">
+<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.request_rules_file "moz-rewrite: Rules File for HTTP Requests">
+<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.response_rules_file "moz-rewrite: Rules File for HTTP Responses">
+
+<!ENTITY prefwindow.Moz_Rewrite.heading.requests "HTTP Requests (outbound)">
+<!ENTITY prefwindow.Moz_Rewrite.heading.responses "HTTP Responses (inbound)">
+<!ENTITY prefwindow.Moz_Rewrite.heading.log_file "Log File">
+
+<!ENTITY prefwindow.Moz_Rewrite.label.request.enabled "Enabled">
+<!ENTITY prefwindow.Moz_Rewrite.label.request.rules_file.path "Path to Rules File">
+<!ENTITY prefwindow.Moz_Rewrite.label.request.rules_file.find_button "Find">
+<!ENTITY prefwindow.Moz_Rewrite.label.request.rules_file.watch_interval "Watch Interval (ms, 0 to disable)">
+
+<!ENTITY prefwindow.Moz_Rewrite.label.response.enabled "Enabled">
+<!ENTITY prefwindow.Moz_Rewrite.label.response.rules_file.path "Path to Rules File">
+<!ENTITY prefwindow.Moz_Rewrite.label.response.rules_file.find_button "Find">
+<!ENTITY prefwindow.Moz_Rewrite.label.response.rules_file.watch_interval "Watch Interval (ms, 0 to disable)">
+
+<!ENTITY prefwindow.Moz_Rewrite.label.log_file.path "Path to Log File">
+<!ENTITY prefwindow.Moz_Rewrite.label.log_file.find_button "Find">
