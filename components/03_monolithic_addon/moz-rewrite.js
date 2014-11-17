@@ -549,7 +549,7 @@ var HTTP_Stream = Class.extend({
 				rules_file_path		= rules_file_path.replace(/^\s+/,'').replace(/\s+$/,'');
 
 				if (rules_file_path){
-					special_dirs_pattern	= /^{([^}]+)}(.*)$/;
+					special_dirs_pattern	= /^\{([^\}]+)\}[\/\\]?(.*)$/;
 					matches					= special_dirs_pattern.exec(rules_file_path);
 					if (matches === null){
 						rules_file			= new FileUtils.File(rules_file_path);
@@ -558,7 +558,12 @@ var HTTP_Stream = Class.extend({
 						special_dir			= matches[1];
 						relative_path		= matches[2];
 
-						rules_file			= FileUtils.getFile(special_dir, relative_path.split(new RegExp('[/\\]')), true);
+						if ( self.debug() ){
+							self.debug('(get_rules_file|checkpoint|01): ' + 'special directory (root) path = "' + special_dir + '"');
+							self.debug('(get_rules_file|checkpoint|02): ' + 'relative (file) path = "' + relative_path + '"');
+						}
+
+						rules_file			= FileUtils.getFile(special_dir, relative_path.split(/[\/\\]/), true);
 					}
 
 					if (
