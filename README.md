@@ -1,6 +1,6 @@
 ## [moz-rewrite](https://github.com/warren-bank/moz-rewrite)
 
-"moz-rewrite" is a Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily modifying HTTP headers in either direction
+Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily modifying HTTP headers in either direction
 
 ### Summary
 
