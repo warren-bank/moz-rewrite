@@ -1,8 +1,8 @@
-## [moz-rewrite](https://github.com/warren-bank/moz-rewrite)
+# [moz-rewrite](https://github.com/warren-bank/moz-rewrite)
 
 Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily modifying HTTP headers in either direction
 
-### Summary
+## Summary
 
 * Swiss Army knife for anyone interested in writing rules to intercept and conditionally modify HTTP traffic
 * a distinct set of rules are written for each:
@@ -13,7 +13,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
   * cancel the request
   * redirect the request
 
-### Features
+## Features
 
 * regex patterns are used to match rules against the requested URL
 * rules are applied incrementally, until either:
@@ -36,7 +36,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
   * when this evaluation occurs, there is no contextual request or response.. so there are no contextual variables in scope.
   * however, the same helper functions that are always available to functions (that are defined within the rules data set) will also be available at the time that the rules data set is initialized/evaluated.
 
-### Contextual Variables (in scope when functions are called)
+## Contextual Variables <sub>(in scope when functions are called)</sub>
 
   * _both requests and responses_
     * `request.original_uri` = {}<br>
@@ -85,7 +85,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
     * `response.content_length` [integer]
     * `response.content_type` [string]
 
-### Helper Functions (in scope when functions are called)
+## Helper Functions <sub>(in scope when functions are called)</sub>
 
   * _always available_
     * `atob(string_base64_encoded)`<br>
@@ -117,7 +117,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 
   * _response only_
 
-### Data Structure
+## Data Structure
 
 * the same data structure (schema) applies to both requests and responses
 * request and response data are defined separately
@@ -150,7 +150,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 * while rules are being processed, an internal list of updates is being created and incrementally updated.
 * when the processing of rules is complete, this internal list of updates are applied to the request/response.
 
-### Examples
+## Examples
 
 1. sample _response_ rules data set:
   >
@@ -236,7 +236,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
           however, none of your rules (in that particular data set) will be applied.
         * since requests and responses use separate data sets, an error in one won't effect the other.
 
-### User Preferences
+## User Preferences
 
   * _HTTP Requests (outbound)_:
     * on/off toggle
@@ -280,7 +280,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 
       > default: 0 (off)
 
-### Comments / Implementation Notes
+## Comments / Implementation Notes
 
   * data sets are stored in external files.<br>
     this allows them to be maintained using any text editor.
@@ -334,6 +334,46 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
     * this cost is farther reduced by using a strategy that counts the number of functions within the rules array data set during its validation.
     * if there are no functions, then there's no need to create the contextual variables that would normally be available (in scope) to functions;
     * when it's appropriate to do so, eliminating this step makes the performance cost (of processing the corresponding rules array data set) extremely low.
+
+## Security Considerations / Vectors of Attack:
+
+  * In order for a blackhat (nefarious individual) to exploit [this addon](https://github.com/warren-bank/moz-rewrite), the following would need to occur:
+    1. install the addon
+    2. gain access to and modify some browser preferences
+    3. save a (javascript) file to a known path on the file system
+
+  * If a blackhat were to accomplish these "3 steps", among other things&hellip; they would be capable of the following:
+    * forward a message back to themself (into the cloud) that contains:
+      * a record of all requested domains along with their associated cookies
+      * contents of files that are accessible from the file system
+    * add/edit/delete files that are accessible from the file system
+
+  * Pretty scary stuff&hellip; can this really happen?
+    * first I need to say upfront that I'm _**NO SECURITY EXPERT**_&hellip;<br>
+      please take anything I say here as my own personal opinions, and nothing more.
+    * I can only see two ways that these "3 steps" could all occur:
+      1. evil addon:
+         * you intentionally install this (good) addon [step 1], since this step cannot be done silently
+         * you also intentionally install a different (bad) addon, which would be able to accomplish [steps 2-3]
+      2. evil roommate:
+         * if another person were able to:
+           * log onto your computer
+           * load Firefox using your profile<br>
+            <sub>( Firefox [supports multiple user profiles](https://support.mozilla.org/en-US/kb/profile-manager-create-and-remove-firefox-profiles), but [doesn't natively support password protecting access to using them](https://support.mozilla.org/en-US/questions/807379) )</sub>
+
+           then this person would be free to configure your environment in a way that allows them to spy. (ie: all "3 steps")
+
+## A fork that isn't a fork&hellip;
+##### a spoon, maybe?
+
+This [spoon](https://github.com/warren-bank/moz-rewrite-amo) is for [AMO](https://addons.mozilla.org/en-US/firefox/addon/rewrite-http-headers/), as well as a specific subset of users.
+
+  * I made a [one-off fork](https://github.com/warren-bank/moz-rewrite-amo) (from [v1.01](https://github.com/warren-bank/moz-rewrite/tree/v1.01)) that is __so__ intentionally crippled that it doesn't even belong in this repo.
+  * The reason behind doing so was the desire to host a version on [AMO](https://addons.mozilla.org/en-US/firefox/addon/rewrite-http-headers/).
+  * The coding methodology that makes this tool so very powerful is, fundamentally, the strategic usage of the javascript `eval` statement.
+  * AMO doesn't accept/host addons that include `eval` for their own reasons, which are grounded in security concerns&hellip; including those discussed above.
+  * A subset of (less technical) users would probably never make use of any advanced scripting features.
+    This group would likely prefer a version that doesn't expose them to __any__ possible security risk.
 
 ## License
   > [GPLv2](http://www.gnu.org/licenses/gpl-2.0.txt)
