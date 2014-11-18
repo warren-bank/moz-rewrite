@@ -303,7 +303,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
         * `{DfltDwnld}`: <br>default Downloads directory
         * `{TmpD}`: <br>operating system's temporary files directory
       * sample interpolation values:
-        * Windows, PortableApps:
+        * Windows, [PortableApps](http://portableapps.com/apps/internet/firefox_portable):
           * `{ProfD}`: <br>`C:\PortableApps\Firefox\Data\profile`
           * `{CurProcD}`: <br>`C:\PortableApps\Firefox\App\firefox\browser`
           * `{ProfDefNoLoc}`: <br>`C:\PortableApps\Firefox\App\firefox\browser\defaults\profile`
