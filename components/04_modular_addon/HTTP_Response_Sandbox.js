@@ -32,15 +32,18 @@ var HTTP_Response_Sandbox = Shared_Sandbox.extend({
 
 		this.request	= null;
 		this.response	= null;
+		this.save		= null;
 	},
 
 	"get_local_variables": function(){
 		this.debug('(get_local_variables|HTTP_Response_Sandbox|checkpoint|01)');
 		var self = this;
+		var noop = function(){};
 
 		return this.combine_local_variables(this._super(), {
 			"request"	: (self.request  || {}),
-			"response"	: (self.response || {})
+			"response"	: (self.response || {}),
+			"save"		: (self.save     || noop)
 		});
 	},
 
@@ -49,6 +52,7 @@ var HTTP_Response_Sandbox = Shared_Sandbox.extend({
 
 		this.request	= null;
 		this.response	= null;
+		this.save		= null;
 	}
 
 });

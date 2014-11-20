@@ -33,6 +33,7 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 		this.request		= null;
 		this.redirectTo		= null;
 		this.cancel			= null;
+		this.save			= null;
 	},
 
 	"get_local_variables": function(){
@@ -43,7 +44,8 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 		return this.combine_local_variables(this._super(), {
 			"request"		: (self.request    ||   {}),
 			"redirectTo"	: (self.redirectTo || noop),
-			"cancel"		: (self.cancel     || noop)
+			"cancel"		: (self.cancel     || noop),
+			"save"			: (self.save       || noop)
 		});
 	},
 
@@ -53,6 +55,7 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 		this.request		= null;
 		this.redirectTo		= null;
 		this.cancel			= null;
+		this.save			= null;
 	}
 
 });

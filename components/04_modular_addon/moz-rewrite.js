@@ -25,19 +25,21 @@ const OS	= Cc['@mozilla.org/observer-service;1'].getService(Ci.nsIObserverServic
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
 Cu.import("resource://Moz-Rewrite/helper_functions.js");
+Cu.import("resource://Moz-Rewrite/HTTP_Request_Persistence.js");
 Cu.import("resource://Moz-Rewrite/HTTP_Request_Stream.js");
 Cu.import("resource://Moz-Rewrite/HTTP_Response_Stream.js");
 
 // ------------------------------------------------------------------------------------------------ "Moz_Rewrite" XPCOM component boilerplate
 
 function Moz_Rewrite() {
-	this.wrappedJSObject		= this;
-	this.prefs					= helper_functions.get_prefs();
-	this.log					= helper_functions.wrap_console_log('moz-rewrite: ', false);
-	this.debug					= null;
-	this.observers				= [];
-	this.HTTP_Request_Stream	= new HTTP_Request_Stream(false);
-	this.HTTP_Response_Stream	= new HTTP_Response_Stream(false);
+	this.wrappedJSObject			= this;
+	this.prefs						= helper_functions.get_prefs();
+	this.log						= helper_functions.wrap_console_log('moz-rewrite: ', false);
+	this.debug						= null;
+	this.observers					= [];
+	this.HTTP_Request_Persistence	= new HTTP_Request_Persistence();
+	this.HTTP_Request_Stream		= new HTTP_Request_Stream(this.HTTP_Request_Persistence, false);
+	this.HTTP_Response_Stream		= new HTTP_Response_Stream(this.HTTP_Request_Persistence, false);
 }
 
 Moz_Rewrite.prototype = {
@@ -143,6 +145,7 @@ Moz_Rewrite.prototype = {
 
 	"at_startup":				function(){
 		var self = this;
+		var initialize_common_objects = false;
 		try {
 			//self.debug = helper_functions.wrap_console_log('moz-rewrite: ', ( self.prefs.getBoolPref("debug") == false ));
 
@@ -150,11 +153,16 @@ Moz_Rewrite.prototype = {
 				OS.addObserver(self, "http-on-modify-request", false);
 				self.observers.push("http-on-modify-request");
 				self.HTTP_Request_Stream.at_startup();
+				initialize_common_objects = true;
 			}
 			if (self.prefs.getBoolPref("response.enabled")){
 				OS.addObserver(self, "http-on-examine-response", false);
 				self.observers.push("http-on-examine-response");
 				self.HTTP_Response_Stream.at_startup();
+				initialize_common_objects = true;
+			}
+			if (initialize_common_objects){
+				self.HTTP_Request_Persistence.at_startup();
 			}
 			if (!("addObserver" in self.prefs)){
 				self.prefs.QueryInterface(Ci.nsIPrefBranch2);
@@ -177,8 +185,9 @@ Moz_Rewrite.prototype = {
 				OS.removeObserver(self, self.observers.shift(), false);
 			}
 
-			self.HTTP_Request_Stream.at_shutdown();
 			self.HTTP_Response_Stream.at_shutdown();
+			self.HTTP_Request_Stream.at_shutdown();
+			self.HTTP_Request_Persistence.at_shutdown();
 
 			OS.addObserver(self, "profile-after-change", false);
 			self.debug = null;

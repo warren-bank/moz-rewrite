@@ -27,14 +27,15 @@ Cu.import("resource://Moz-Rewrite/HTTP_Stream.js");
 Cu.import("resource://Moz-Rewrite/HTTP_Request_Sandbox.js");
 
 var HTTP_Request_Stream = HTTP_Stream.extend({
-	"init": function(auto_init){
+	"init": function(request_persistence, auto_init){
 		this.type		= 'request';
-		this._super(auto_init);
+		this._super(request_persistence, auto_init);
 		this.sandbox	= new HTTP_Request_Sandbox();
 	},
 
 	"process_channel":	function(httpChannel){
 		var self = this;
+		var trigger_save = false;
 		var url, post_rule_callback, updated_headers, header_key, header_value;
 
 		// sanity check: is there any work to do?
@@ -56,6 +57,11 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 				};
 				self.sandbox.cancel = function(){
 					httpChannel.cancel(Cr.NS_BINDING_ABORTED);
+				};
+
+				// add persistence
+				self.sandbox.save = function(){
+					trigger_save = true;
 				};
 
 				// process the rules data
@@ -84,9 +90,16 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 					}
 				}
 			}
+
+			if (trigger_save){
+				self.save_request(httpChannel);
+			}
 		}
 		catch(e){
 			self.log('(process_channel|error): ' + e.message);
+		}
+		finally {
+			self.sandbox.cleanup();
 		}
 	},
 

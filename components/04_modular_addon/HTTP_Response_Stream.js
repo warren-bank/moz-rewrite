@@ -28,9 +28,9 @@ Cu.import("resource://Moz-Rewrite/HTTP_Response_Sandbox.js");
 Cu.import("resource://Moz-Rewrite/helper_functions.js");
 
 var HTTP_Response_Stream = HTTP_Stream.extend({
-	"init": function(auto_init){
+	"init": function(request_persistence, auto_init){
 		this.type		= 'response';
-		this._super(auto_init);
+		this._super(request_persistence, auto_init);
 		this.sandbox	= new HTTP_Response_Sandbox();
 	},
 
@@ -46,7 +46,7 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 			};
 			self.sandbox.response = {"a":5};
 			vars	= self.sandbox.get_local_variables();
-			result	= self.sandbox.call(f);
+			result	= self.sandbox.call(f, true);
 			self.debug('(at_startup|testing|sandbox|checkpoint|01): ' + 'variables in local scope: ' + helper_functions.get_object_summary(vars));
 			self.debug('(at_startup|testing|sandbox|checkpoint|02): ' + 'output of calling a function to print the "response" variable: ' + JSON.stringify(result));
 		}
@@ -78,6 +78,7 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 
 	"process_channel":	function(httpChannel){
 		var self = this;
+		var trigger_save = false;
 		var url, post_rule_callback, updated_headers, header_key, header_value;
 
 		// sanity check: is there any work to do?
@@ -93,6 +94,11 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 				// add per-request variables
 				self.sandbox.request	= self.get_request_data(httpChannel);
 				self.sandbox.response	= self.get_response_data(httpChannel);
+
+				// add persistence
+				self.sandbox.save = function(){
+					trigger_save = true;
+				};
 
 				// process the rules data
 				post_rule_callback = function(updated_headers){
@@ -120,9 +126,16 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 					}
 				}
 			}
+
+			if (trigger_save){
+				self.save_request(httpChannel);
+			}
 		}
 		catch(e){
 			self.log('(process_channel|error): ' + e.message);
+		}
+		finally {
+			self.sandbox.cleanup();
 		}
 	}
 

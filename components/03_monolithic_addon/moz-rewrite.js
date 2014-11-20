@@ -99,6 +99,44 @@ var helper_functions = {
 			o2[key] = (typeof o1[key]);
 		}
 		return (raw? o2 : JSON.stringify(o2));
+	},
+
+	// throws Exception
+	"get_file_from_path": function(file_path, debug){
+		var special_dirs_pattern, matches, special_dir, relative_path;
+		var file_handle				= null;
+
+		// trim leading/trailing whitespace
+		file_path					= file_path.replace(/^\s+/,'').replace(/\s+$/,'');
+
+		if (file_path){
+			special_dirs_pattern	= /^\{([^\}]+)\}[\/\\]?(.*)$/;
+			matches					= special_dirs_pattern.exec(file_path);
+			if (matches === null){
+				file_handle			= new FileUtils.File(file_path);
+			}
+			else {
+				special_dir			= matches[1];
+				relative_path		= matches[2];
+
+				if (typeof debug === 'function'){
+					debug('01', 'special directory (root) path = "' + special_dir + '"');
+					debug('02', 'relative (file) path = "' + relative_path + '"');
+				}
+
+				file_handle			= FileUtils.getFile(special_dir, relative_path.split(/[\/\\]/), true);
+			}
+
+			if (
+				(! file_handle.exists()) ||
+				(! file_handle.isFile()) ||
+				(! file_handle.isReadable())
+			){
+				throw new Error('file either does not exist or cannot be accessed' + ((file_handle && file_handle.path)? (': ' + file_handle.path) : ''));
+			}
+		}
+
+		return file_handle;
 	}
 
 };
@@ -219,7 +257,7 @@ var Base_Sandbox = Class.extend({
 		return helper_functions.extend_object(super_vars, vars);
 	},
 
-	"call": function(f){
+	"call": function(f, do_cleanup){
 		var self = this;
 		var code, result;
 
@@ -227,7 +265,7 @@ var Base_Sandbox = Class.extend({
 			code	= f.toSource() + '()';
 			self.debug() && self.debug('(call|checkpoint|01): ' + code);
 
-			result	= self.eval(code);
+			result	= self.eval(code, do_cleanup);
 		}
 		else {
 			result	= null;
@@ -235,11 +273,12 @@ var Base_Sandbox = Class.extend({
 		return result;
 	},
 
-	"eval": function(code){
+	"eval": function(code, do_cleanup){
 		var self = this;
+		var result = null;
 
 		// want to execute (source) code while having arbitrary variables in the local scope
-		var local_variables, names, values, name, wrapper_function, result;
+		var local_variables, names, values, name, wrapper_function;
 
 		try {
 			local_variables = self.get_local_variables();
@@ -258,9 +297,9 @@ var Base_Sandbox = Class.extend({
 			result = null;
 		}
 		finally {
-			self.cleanup();
+			if (do_cleanup) self.cleanup();
+			return result;
 		}
-		return result;
 	},
 
 	"cleanup": function(){
@@ -411,6 +450,7 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 		this.request		= null;
 		this.redirectTo		= null;
 		this.cancel			= null;
+		this.save			= null;
 	},
 
 	"get_local_variables": function(){
@@ -421,7 +461,8 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 		return this.combine_local_variables(this._super(), {
 			"request"		: (self.request    ||   {}),
 			"redirectTo"	: (self.redirectTo || noop),
-			"cancel"		: (self.cancel     || noop)
+			"cancel"		: (self.cancel     || noop),
+			"save"			: (self.save       || noop)
 		});
 	},
 
@@ -431,6 +472,7 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 		this.request		= null;
 		this.redirectTo		= null;
 		this.cancel			= null;
+		this.save			= null;
 	}
 
 });
@@ -444,15 +486,18 @@ var HTTP_Response_Sandbox = Shared_Sandbox.extend({
 
 		this.request	= null;
 		this.response	= null;
+		this.save		= null;
 	},
 
 	"get_local_variables": function(){
 		this.debug('(get_local_variables|HTTP_Response_Sandbox|checkpoint|01)');
 		var self = this;
+		var noop = function(){};
 
 		return this.combine_local_variables(this._super(), {
 			"request"	: (self.request  || {}),
-			"response"	: (self.response || {})
+			"response"	: (self.response || {}),
+			"save"		: (self.save     || noop)
 		});
 	},
 
@@ -461,6 +506,265 @@ var HTTP_Response_Sandbox = Shared_Sandbox.extend({
 
 		this.request	= null;
 		this.response	= null;
+		this.save		= null;
+	}
+
+});
+
+// ------------------------------------------------------------------------------------------------ "HTTP_Request_Persistence":
+
+var HTTP_Request_Persistence = Class.extend({
+	"init": function(){
+		this.prefs					= helper_functions.get_prefs('request_persistence.');
+		this.log					= helper_functions.wrap_console_log(('HTTP_request_persistence: '), false);
+		this.save_file				= null;
+		this.output_directory		= null;
+		this.wget_executable		= null;
+		this.request_queue			= [];
+		this.is_saving				= false;
+
+		this.debug					= null;
+	},
+
+	"at_startup":	function(){
+		var self = this;
+
+		try {
+			// (re)initialize state
+			self.save_file			= null;
+			self.output_directory	= null;
+			self.wget_executable	= null;
+			self.request_queue		= [];
+			self.is_saving			= false;
+
+			// check that this stream is enabled
+			if (! self.is_enabled()){return;}
+
+			// (re)initialize debugging logger
+			(function(){
+				var is_disabled;
+				is_disabled			= ( (helper_functions.get_prefs()).getBoolPref("debug") == false );
+				self.debug			= helper_functions.wrap_console_log('HTTP_request_persistence: ', is_disabled);
+			})();
+
+			// get file/directory handles
+			self.save_file			= self.get_file_handle('save_file.path');
+			self.output_directory	= self.get_file_handle('replay.output_directory.path');
+			self.wget_executable	= self.get_file_handle('replay.run.wget.executable_file.path');
+		}
+		catch(e){
+			self.log('(at_startup|error): ' + e.message);
+		}
+	},
+
+	"is_enabled":	function(){
+		return this.prefs.getBoolPref("enabled");
+	},
+
+	"get_file_handle":	function(pref_path){
+		var self = this;
+		var file_handle = null;
+		var debug, file_path;
+
+		try {
+			if (self.prefs.prefHasUserValue(pref_path)) {
+				debug			= self.debug() && function(index, text){
+									self.debug('(get_file_handle|checkpoint|' + index + '): ' + text);
+								};
+				file_path		= self.prefs.getCharPref(pref_path);
+				file_handle		= helper_functions.get_file_from_path(file_path, debug);
+			}
+		}
+		catch(e){
+			self.log('(get_file_handle|prefs|error): ' + e.message);
+			file_handle = null;
+		}
+		finally {
+			return file_handle;
+		}
+	},
+
+	"is_file_handle_usable":	function(file_handle, methods){
+		var self = this;
+		var usable = true;
+		var i, method_name;
+
+		usable = usable && (
+			(file_handle !== null) &&
+			(file_handle.exists())
+		);
+
+		if (usable && methods){
+			for (i=0; i<methods.length; i++){
+				method_name	= methods[i];
+				if (typeof file_handle[method_name] === 'function'){
+					usable	= usable && (file_handle[method_name])();
+					if (! usable) break;
+				}
+			}
+		}
+
+		return usable;
+	},
+
+	"save":	function(request){
+		var self = this;
+
+		self.request_queue.push(request);
+		if (! self.is_saving){
+			self.process_request_queue();
+		}
+	},
+
+	"process_request_queue": function(){
+		var self = this;
+
+		self.is_saving = true;
+
+		var done = function(stop_processing){
+			if (stop_processing){
+				self.save_file			= null;
+				self.request_queue		= [];
+				self.is_saving			= false;
+				return false;
+			}
+			else if (self.request_queue.length === 0) {
+				self.is_saving			= false;
+				return true;
+			}
+			else {
+				return self.process_request_queue();
+			}
+		};
+
+		var request, temp_file, temp_FileOutputStream, temp_UTF8_ConverterOutputStream;
+		var maximum_capacity, line_counter;
+		var save_LineInputStream, line, has_more;
+
+		self.debug() && self.debug('(save|process_request_queue|checkpoint|1): ' + 'beginning sanity checks..');
+
+		if (! self.is_file_handle_usable(self.save_file, ['isFile','isReadable','isWritable'])){return done(true);}
+
+		if (self.request_queue.length === 0){return done();}
+
+		self.debug() && self.debug('(save|process_request_queue|checkpoint|2): ' + 'sanity checks passed');
+
+		var do_cleanup = function(){
+			var close_stream = function(s){
+				if (
+					(s) &&
+					(typeof s === 'object') &&
+					(typeof s.close === 'function')
+				){
+					try {
+						s.close();
+					}
+					catch(e){}
+				}
+			};
+
+			close_stream(temp_FileOutputStream);
+			close_stream(temp_UTF8_ConverterOutputStream);
+			close_stream(save_LineInputStream);
+
+			temp_FileOutputStream			= null;
+			temp_UTF8_ConverterOutputStream	= null;
+			save_LineInputStream			= null;
+		};
+
+		try {
+			request							= self.request_queue.shift();
+
+			// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIFile
+			// https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O#Writing_a_File
+			// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIFileOutputStream
+			temp_file = self.save_file.parent.clone();
+			temp_file.append(self.save_file.leafName + '.temp');
+			temp_FileOutputStream			= Cc["@mozilla.org/network/file-output-stream;1"].createInstance(Ci.nsIFileOutputStream);
+
+			self.debug() && self.debug('(save|process_request_queue|checkpoint|3): ' + 'temporary filepath = ' + temp_file.path);
+
+			// https://developer.mozilla.org/en-US/docs/PR_Open#Parameters
+			temp_FileOutputStream.init(temp_file, 0x02 | 0x08 | 0x20 | 0x40, 0600, 0);
+
+			self.debug() && self.debug('(save|process_request_queue|checkpoint|4): ' + 'temporary file has been created = ' + temp_file.exists());
+
+			temp_UTF8_ConverterOutputStream	= Cc["@mozilla.org/intl/converter-output-stream;1"].createInstance(Ci.nsIConverterOutputStream);
+			temp_UTF8_ConverterOutputStream.init(temp_FileOutputStream, "UTF-8", 0, 0);
+
+			// prepend serialized data for the newest request
+			temp_UTF8_ConverterOutputStream.writeString( JSON.stringify(request) + ',' + "\n" );
+
+			maximum_capacity				= self.prefs.getIntPref('save_file.maximum_capacity');
+			line_counter					= 1;
+
+			if (
+				(self.save_file.fileSize > 0) &&
+				(
+					(maximum_capacity === 0) ||
+					(maximum_capacity > line_counter)
+				)
+			){
+				// https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O#Line_by_line
+				save_LineInputStream		= Cc["@mozilla.org/network/file-input-stream;1"].createInstance(Ci.nsIFileInputStream);
+				save_LineInputStream.init(self.save_file, 0x01, 0400, 0);
+				save_LineInputStream.QueryInterface(Ci.nsILineInputStream);
+
+				do {
+					line					= {"value": ""};
+					has_more				= save_LineInputStream.readLine(line);
+					if (line.value){
+						temp_UTF8_ConverterOutputStream.writeString( line.value + "\n" );
+						line_counter++;
+					}
+				} while(
+					(has_more) &&
+					(
+						(maximum_capacity === 0) ||
+						(maximum_capacity > line_counter)
+					)
+				);
+			}
+
+			self.debug() && self.debug('(save|process_request_queue|checkpoint|5): ' + line_counter + ' serialized HTTP Request objects have been written to the temporary file');
+
+			// close all file streams
+			do_cleanup();
+
+			// replace save_file with temp_file
+			// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIFile#renameTo()
+			self.save_file.remove(false);
+			temp_file.renameTo( self.save_file.parent, self.save_file.leafName );
+
+			// are file_handles equivalent now?
+			if ( self.debug() ){
+				(function(){
+					var is_equivalent = self.save_file.equals(temp_file);
+					self.debug('(save|process_request_queue|checkpoint|6): ' + 'the save_file and temp_file file handles are now equivalent = ' + is_equivalent);
+
+					if (! is_equivalent){
+						self.debug('(save|process_request_queue|checkpoint|7): ' + 'path to save_file = ' + self.save_file.path);
+						self.debug('(save|process_request_queue|checkpoint|8): ' + 'path to temp_file = ' + temp_file.path);
+					}
+				})();
+			}
+
+			return done();
+		}
+		catch(e){
+			self.log('(save|error): ' + e.message);
+			do_cleanup();
+			return done(true);
+		}
+	},
+
+	"at_shutdown":	function(){
+		this.save_file				= null;
+		this.output_directory		= null;
+		this.wget_executable		= null;
+		this.request_queue			= [];
+		this.is_saving				= false;
+		this.debug					= null;
 	}
 
 });
@@ -468,15 +772,16 @@ var HTTP_Response_Sandbox = Shared_Sandbox.extend({
 // ------------------------------------------------------------------------------------------------ "HTTP_Stream":
 
 var HTTP_Stream = Class.extend({
-	"init": function(auto_init){
-		this.prefs			= helper_functions.get_prefs( (this.type + '.') );
-		this.log			= helper_functions.wrap_console_log(('HTTP_' + this.type + '_stream: '), false);
-		this.rules_file		= null;
-		this.rules_data		= null;
-		this.has_functions	= false;
-		this.watch_timer	= null;
-		this.debug			= null;
-		this.sandbox		= null;		// abstract: Shared_Sandbox
+	"init": function(request_persistence, auto_init){
+		this.prefs					= helper_functions.get_prefs( (this.type + '.') );
+		this.log					= helper_functions.wrap_console_log(('HTTP_' + this.type + '_stream: '), false);
+		this.rules_file				= null;
+		this.rules_data				= null;
+		this.has_functions			= false;
+		this.watch_timer			= null;
+		this.debug					= null;
+		this.sandbox				= null;						// abstract: Shared_Sandbox
+		this.request_persistence	= request_persistence;		// dynamically injected by Moz_Rewrite
 
 		if (auto_init){
 			this.at_startup();
@@ -539,41 +844,15 @@ var HTTP_Stream = Class.extend({
 	"get_rules_file":	function(){
 		var self = this;
 		var rules_file = null;
-		var rules_file_path, special_dirs_pattern, matches, special_dir, relative_path;
+		var debug, rules_file_path;
 
 		try {
 			if (self.prefs.prefHasUserValue("rules_file.path")) {
+				debug				= self.debug() && function(index, text){
+										self.debug('(get_rules_file|checkpoint|' + index + '): ' + text);
+									};
 				rules_file_path		= self.prefs.getCharPref("rules_file.path");
-
-				// trim leading/trailing whitespace
-				rules_file_path		= rules_file_path.replace(/^\s+/,'').replace(/\s+$/,'');
-
-				if (rules_file_path){
-					special_dirs_pattern	= /^\{([^\}]+)\}[\/\\]?(.*)$/;
-					matches					= special_dirs_pattern.exec(rules_file_path);
-					if (matches === null){
-						rules_file			= new FileUtils.File(rules_file_path);
-					}
-					else {
-						special_dir			= matches[1];
-						relative_path		= matches[2];
-
-						if ( self.debug() ){
-							self.debug('(get_rules_file|checkpoint|01): ' + 'special directory (root) path = "' + special_dir + '"');
-							self.debug('(get_rules_file|checkpoint|02): ' + 'relative (file) path = "' + relative_path + '"');
-						}
-
-						rules_file			= FileUtils.getFile(special_dir, relative_path.split(/[\/\\]/), true);
-					}
-
-					if (
-						(! rules_file.exists()) ||
-						(! rules_file.isFile()) ||
-						(! rules_file.isReadable())
-					){
-						throw new Error('file either does not exist or cannot be accessed' + ((rules_file && rules_file.path)? (': ' + rules_file.path) : ''));
-					}
-				}
+				rules_file			= helper_functions.get_file_from_path(rules_file_path, debug);
 			}
 		}
 		catch(e){
@@ -611,7 +890,7 @@ var HTTP_Stream = Class.extend({
 		var rules_data;
 
 		try {
-			rules_data = self.sandbox.eval(file_text);
+			rules_data = self.sandbox.eval(file_text, true);
 			self.debug() && self.debug('(evaluate_rules_file|checkpoint|01): ' + JSON.stringify(rules_data));
 
 			// sanity check
@@ -879,6 +1158,7 @@ var HTTP_Stream = Class.extend({
 	},
 
 	"get_HTTP_headers": function(httpChannel, get_response){
+		var self = this;
 		var headers;
 
 		// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIHttpChannel#visitRequestHeaders()
@@ -920,6 +1200,32 @@ var HTTP_Stream = Class.extend({
 		}
 	},
 
+	"get_HTTP_POST_data": function(httpChannel){
+		var self = this;
+		var uploadChannel, uploadChannelStream, stream, postBytes, postStr;
+
+		postStr = '';
+		try {
+			uploadChannel			= httpChannel.QueryInterface(Ci.nsIUploadChannel);
+			uploadChannelStream		= uploadChannel.uploadStream;
+			uploadChannelStream.QueryInterface(Ci.nsISeekableStream).seek(Ci.nsISeekableStream.NS_SEEK_SET, 0);
+			stream					= Cc["@mozilla.org/binaryinputstream;1"].createInstance(Ci.nsIBinaryInputStream);
+			stream.setInputStream(uploadChannelStream);
+			postBytes				= stream.readByteArray(stream.available());
+			postStr					= String.fromCharCode.apply(null, postBytes);
+
+			uploadChannelStream		= uploadChannel.uploadStream;
+			uploadChannelStream.QueryInterface(Ci.nsISeekableStream).seek(Ci.nsISeekableStream.NS_SEEK_SET, 0);
+		}
+		catch(e){
+			postStr = '';
+			self.log('(get_HTTP_POST_data|error): ' + e.message);
+		}
+		finally {
+			return postStr;
+		}
+	},
+
 	"process_channel_rules_data": function(url, post_rule_callback){
 		var self = this;
 		var updated_headers = {};
@@ -937,7 +1243,7 @@ var HTTP_Stream = Class.extend({
 			var result;
 
 			try {
-				result = self.sandbox.call(f);
+				result = self.sandbox.call(f, false);
 				self.debug() && self.debug('(process_channel_rules_data|sandbox|call(f)|checkpoint|01): ' + 'f = ' + f.toSource() + '; result = ' + JSON.stringify(result));
 			}
 			catch(e){
@@ -1036,6 +1342,41 @@ var HTTP_Stream = Class.extend({
 		}
 
 		return updated_headers;
+	},
+
+	"save_request": function(httpChannel){
+		var self = this;
+
+		// sanity check
+		if (
+			(! self.sandbox) ||
+			(! self.sandbox.request) ||
+			(! self.sandbox.request.method) ||
+			(! self.sandbox.request.uri) ||
+			(! self.sandbox.request.uri.href)
+		){return false;}
+
+		var request	= {
+			"method"	: (self.sandbox.request.method.toLowerCase()),
+			"url"		: (self.sandbox.request.uri.href),
+			"headers"	: {}
+		};
+
+		switch(request.method){
+			case 'post':
+				request['post_data'] = self.get_HTTP_POST_data(httpChannel);
+			case 'get':
+				helper_functions.extend_object(request.headers, self.sandbox.request.headers.unmodified);
+				helper_functions.extend_object(request.headers, self.sandbox.request.headers.updated);
+
+				self.request_persistence.save(request);
+				return true;
+				break;
+			default:
+				// noop
+				return false;
+				break;
+		}
 	}
 
 });
@@ -1043,14 +1384,15 @@ var HTTP_Stream = Class.extend({
 // ------------------------------------------------------------------------------------------------ "HTTP_Request_Stream":
 
 var HTTP_Request_Stream = HTTP_Stream.extend({
-	"init": function(auto_init){
+	"init": function(request_persistence, auto_init){
 		this.type		= 'request';
-		this._super(auto_init);
+		this._super(request_persistence, auto_init);
 		this.sandbox	= new HTTP_Request_Sandbox();
 	},
 
 	"process_channel":	function(httpChannel){
 		var self = this;
+		var trigger_save = false;
 		var url, post_rule_callback, updated_headers, header_key, header_value;
 
 		// sanity check: is there any work to do?
@@ -1072,6 +1414,11 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 				};
 				self.sandbox.cancel = function(){
 					httpChannel.cancel(Cr.NS_BINDING_ABORTED);
+				};
+
+				// add persistence
+				self.sandbox.save = function(){
+					trigger_save = true;
 				};
 
 				// process the rules data
@@ -1100,9 +1447,16 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 					}
 				}
 			}
+
+			if (trigger_save){
+				self.save_request(httpChannel);
+			}
 		}
 		catch(e){
 			self.log('(process_channel|error): ' + e.message);
+		}
+		finally {
+			self.sandbox.cleanup();
 		}
 	},
 
@@ -1127,9 +1481,9 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 // ------------------------------------------------------------------------------------------------ "HTTP_Response_Stream":
 
 var HTTP_Response_Stream = HTTP_Stream.extend({
-	"init": function(auto_init){
+	"init": function(request_persistence, auto_init){
 		this.type		= 'response';
-		this._super(auto_init);
+		this._super(request_persistence, auto_init);
 		this.sandbox	= new HTTP_Response_Sandbox();
 	},
 
@@ -1145,7 +1499,7 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 			};
 			self.sandbox.response = {"a":5};
 			vars	= self.sandbox.get_local_variables();
-			result	= self.sandbox.call(f);
+			result	= self.sandbox.call(f, true);
 			self.debug('(at_startup|testing|sandbox|checkpoint|01): ' + 'variables in local scope: ' + helper_functions.get_object_summary(vars));
 			self.debug('(at_startup|testing|sandbox|checkpoint|02): ' + 'output of calling a function to print the "response" variable: ' + JSON.stringify(result));
 		}
@@ -1177,6 +1531,7 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 
 	"process_channel":	function(httpChannel){
 		var self = this;
+		var trigger_save = false;
 		var url, post_rule_callback, updated_headers, header_key, header_value;
 
 		// sanity check: is there any work to do?
@@ -1192,6 +1547,11 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 				// add per-request variables
 				self.sandbox.request	= self.get_request_data(httpChannel);
 				self.sandbox.response	= self.get_response_data(httpChannel);
+
+				// add persistence
+				self.sandbox.save = function(){
+					trigger_save = true;
+				};
 
 				// process the rules data
 				post_rule_callback = function(updated_headers){
@@ -1219,9 +1579,16 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 					}
 				}
 			}
+
+			if (trigger_save){
+				self.save_request(httpChannel);
+			}
 		}
 		catch(e){
 			self.log('(process_channel|error): ' + e.message);
+		}
+		finally {
+			self.sandbox.cleanup();
 		}
 	}
 
@@ -1230,13 +1597,14 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 // ------------------------------------------------------------------------------------------------ "Moz_Rewrite" XPCOM component boilerplate
 
 function Moz_Rewrite() {
-	this.wrappedJSObject		= this;
-	this.prefs					= helper_functions.get_prefs();
-	this.log					= helper_functions.wrap_console_log('moz-rewrite: ', false);
-	this.debug					= null;
-	this.observers				= [];
-	this.HTTP_Request_Stream	= new HTTP_Request_Stream(false);
-	this.HTTP_Response_Stream	= new HTTP_Response_Stream(false);
+	this.wrappedJSObject			= this;
+	this.prefs						= helper_functions.get_prefs();
+	this.log						= helper_functions.wrap_console_log('moz-rewrite: ', false);
+	this.debug						= null;
+	this.observers					= [];
+	this.HTTP_Request_Persistence	= new HTTP_Request_Persistence();
+	this.HTTP_Request_Stream		= new HTTP_Request_Stream(this.HTTP_Request_Persistence, false);
+	this.HTTP_Response_Stream		= new HTTP_Response_Stream(this.HTTP_Request_Persistence, false);
 }
 
 Moz_Rewrite.prototype = {
@@ -1342,6 +1710,7 @@ Moz_Rewrite.prototype = {
 
 	"at_startup":				function(){
 		var self = this;
+		var initialize_common_objects = false;
 		try {
 			//self.debug = helper_functions.wrap_console_log('moz-rewrite: ', ( self.prefs.getBoolPref("debug") == false ));
 
@@ -1349,11 +1718,16 @@ Moz_Rewrite.prototype = {
 				OS.addObserver(self, "http-on-modify-request", false);
 				self.observers.push("http-on-modify-request");
 				self.HTTP_Request_Stream.at_startup();
+				initialize_common_objects = true;
 			}
 			if (self.prefs.getBoolPref("response.enabled")){
 				OS.addObserver(self, "http-on-examine-response", false);
 				self.observers.push("http-on-examine-response");
 				self.HTTP_Response_Stream.at_startup();
+				initialize_common_objects = true;
+			}
+			if (initialize_common_objects){
+				self.HTTP_Request_Persistence.at_startup();
 			}
 			if (!("addObserver" in self.prefs)){
 				self.prefs.QueryInterface(Ci.nsIPrefBranch2);
@@ -1376,8 +1750,9 @@ Moz_Rewrite.prototype = {
 				OS.removeObserver(self, self.observers.shift(), false);
 			}
 
-			self.HTTP_Request_Stream.at_shutdown();
 			self.HTTP_Response_Stream.at_shutdown();
+			self.HTTP_Request_Stream.at_shutdown();
+			self.HTTP_Request_Persistence.at_shutdown();
 
 			OS.addObserver(self, "profile-after-change", false);
 			self.debug = null;

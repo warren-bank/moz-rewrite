@@ -1,11 +1,14 @@
 <!ENTITY prefwindow.Moz_Rewrite.title.window "moz-rewrite: user preferences">
 <!ENTITY prefwindow.Moz_Rewrite.title.pane "General Options">
-<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.request_rules_file "moz-rewrite: Rules File for HTTP Requests">
-<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.response_rules_file "moz-rewrite: Rules File for HTTP Responses">
+<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.request_rules_file "moz-rewrite: rules file for HTTP Requests">
+<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.response_rules_file "moz-rewrite: rules file for HTTP Responses">
+<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.request_persistence.save_file "moz-rewrite: output file for saved HTTP Requests">
+<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.request_persistence.download_directory "moz-rewrite: download directory for replayed HTTP Requests">
+<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.request_persistence.wget_exe "moz-rewrite: \'wget\' executable for replaying HTTP Requests">
 
 <!ENTITY prefwindow.Moz_Rewrite.heading.requests "HTTP Requests (outbound)">
 <!ENTITY prefwindow.Moz_Rewrite.heading.responses "HTTP Responses (inbound)">
-<!ENTITY prefwindow.Moz_Rewrite.heading.log_file "Log File">
+<!ENTITY prefwindow.Moz_Rewrite.heading.request_persistence "HTTP Request Persistence (save + replay)">
 
 <!ENTITY prefwindow.Moz_Rewrite.label.request.enabled "Enabled">
 <!ENTITY prefwindow.Moz_Rewrite.label.request.rules_file.path "Path to Rules File">
@@ -17,5 +20,12 @@
 <!ENTITY prefwindow.Moz_Rewrite.label.response.rules_file.find_button "Find">
 <!ENTITY prefwindow.Moz_Rewrite.label.response.rules_file.watch_interval "Watch Interval (ms, 0 to disable)">
 
-<!ENTITY prefwindow.Moz_Rewrite.label.log_file.path "Path to Log File">
-<!ENTITY prefwindow.Moz_Rewrite.label.log_file.find_button "Find">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.enabled "Enabled">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.save_file.path "Path to Output File">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.save_file.find_button "Find">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.save_file.maximum_capacity "Maximum Number of Saved Requests">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.replay.download_directory.path "Path to Download Directory">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.replay.download_directory.find_button "Find">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.replay.run.wget.executable_file.path "Path to 'wget' executable">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.replay.run.wget.executable_file.find_button "Find">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.replay.run.wget.options "Command-Line Options for 'wget' executable">

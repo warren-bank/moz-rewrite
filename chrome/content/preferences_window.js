@@ -1,12 +1,52 @@
 var prefwindow = {
-	"open_file_find_dialog": function(element_id, dialog_title){
-		var fpClass, file_picker, result, chosen_file, chosen_filepath, element;
+	"open_file_find_dialog": function(element_id, dialog_title, filters, mode){
+		var fpClass, file_picker, i, result, chosen_file, chosen_filepath, element;
+
+		// default filter: if input value isn't an array. allow empty arrays to pass through.
+		if (
+			(typeof filters !== 'object') ||
+			(filters === null) ||
+			(typeof filters.length !== 'number')
+		){
+			filters	= [
+				["javascript", "*.js; *.txt"]
+			];
+		}
+
+		// default mode
+		mode		= mode || 'modeOpen';
 
 		fpClass		= Components.interfaces.nsIFilePicker;
 		file_picker	= Components.classes["@mozilla.org/filepicker;1"].createInstance(fpClass);
-		file_picker.init(window, dialog_title, fpClass.modeOpen);
+		file_picker.init(window, dialog_title, fpClass[mode]);
 
-		file_picker.appendFilter("javascript", "*.js; *.txt");
+		for (i=0; i<filters.length; i++){
+			switch(typeof filters[i]){
+				case 'string':
+					// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIFilePicker#Filter_constants
+					// ex: 'filterApps'
+					file_picker.appendFilters( fpClass[ filters[i] ] );
+					break;
+				case 'object':
+					// sanity check
+					if (
+						(filters[i] !== null) &&
+						(typeof filters[i].length === 'number')
+					){
+						if (
+							(filters[i].length === 1)
+						){
+							file_picker.appendFilters( fpClass[ filters[i][0] ] );
+						}
+						else if (
+							(filters[i].length === 2)
+						){
+							file_picker.appendFilter( filters[i][0], filters[i][1] );
+						}
+					}
+					break;
+			}
+		}
 
 		result		= file_picker.show();
 		if (result != fpClass.returnCancel){

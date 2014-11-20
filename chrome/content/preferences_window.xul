@@ -25,6 +25,13 @@
 			<preference id="response_enabled"                    name="extensions.Moz-Rewrite.response.enabled"                    type="bool"/>
 			<preference id="response_rules_file_path"            name="extensions.Moz-Rewrite.response.rules_file.path"            type="string"/>
 			<preference id="response_rules_file_watch_interval"  name="extensions.Moz-Rewrite.response.rules_file.watch_interval"  type="int"/>
+
+			<preference id="persistence_enabled"                 name="extensions.Moz-Rewrite.request_persistence.enabled"                               type="bool"/>
+			<preference id="persistence_save_file"               name="extensions.Moz-Rewrite.request_persistence.save_file.path"                        type="string"/>
+			<preference id="persistence_capacity"                name="extensions.Moz-Rewrite.request_persistence.save_file.maximum_capacity"            type="int"/>
+			<preference id="replay_download_directory"           name="extensions.Moz-Rewrite.request_persistence.replay.download_directory.path"        type="string"/>
+			<preference id="replay_wget_exe"                     name="extensions.Moz-Rewrite.request_persistence.replay.run.wget.executable_file.path"  type="string"/>
+			<preference id="replay_wget_options"                 name="extensions.Moz-Rewrite.request_persistence.replay.run.wget.options"               type="string"/>
 		</preferences>
 
 		<groupbox>
@@ -68,6 +75,46 @@
 				<textbox preference="response_rules_file_watch_interval" type="number" min="0" max="86400000" increment="1000" decimalplaces="0" hidespinbuttons="false" size="10"/>
 				<spacer flex="1"/>
 			</hbox>
+		</groupbox>
+
+		<separator class="thin"/>
+
+		<groupbox>
+			<caption label="&prefwindow.Moz_Rewrite.heading.request_persistence;"/>
+
+			<checkbox preference="persistence_enabled" label="&prefwindow.Moz_Rewrite.label.request_persistence.enabled;"/>
+
+			<separator class="thin"/>
+			<label value="&prefwindow.Moz_Rewrite.label.request_persistence.save_file.path;: "/>
+			<hbox>
+				<textbox preference="persistence_save_file" id="persistence_save_file_element" multiline="false" newlines="stripsurroundingwhitespace" placeholder="{ProfD}/moz-rewrite/saved_requests.txt" flex="1"/>
+				<button label="&prefwindow.Moz_Rewrite.label.request_persistence.save_file.find_button;.." oncommand="prefwindow.open_file_find_dialog('persistence_save_file_element', '&prefwindow.Moz_Rewrite.title.dialog_window.request_persistence.save_file;',[['text','*.txt; *.dat; *.json; *.js']]);"/>
+			</hbox>
+
+			<separator class="thin"/>
+			<label value="&prefwindow.Moz_Rewrite.label.request_persistence.save_file.maximum_capacity;: "/>
+			<hbox>
+				<textbox preference="persistence_capacity" type="number" min="0" max="1000000" increment="1" decimalplaces="0" hidespinbuttons="false" size="10"/>
+				<spacer flex="1"/>
+			</hbox>
+
+			<separator class="thin"/>
+			<label value="&prefwindow.Moz_Rewrite.label.request_persistence.replay.download_directory.path;: "/>
+			<hbox>
+				<textbox preference="replay_download_directory" id="replay_download_directory_element" multiline="false" newlines="stripsurroundingwhitespace" placeholder="{DfltDwnld}" flex="1"/>
+				<button label="&prefwindow.Moz_Rewrite.label.request_persistence.replay.download_directory.find_button;.." oncommand="prefwindow.open_file_find_dialog('replay_download_directory_element', '&prefwindow.Moz_Rewrite.title.dialog_window.request_persistence.download_directory;',[],'modeGetFolder');"/>
+			</hbox>
+
+			<separator class="thin"/>
+			<label value="&prefwindow.Moz_Rewrite.label.request_persistence.replay.run.wget.executable_file.path;: "/>
+			<hbox>
+				<textbox preference="replay_wget_exe" id="replay_wget_exe_element" multiline="false" newlines="stripsurroundingwhitespace" placeholder="/path/to/wget" flex="1"/>
+				<button label="&prefwindow.Moz_Rewrite.label.request_persistence.replay.run.wget.executable_file.find_button;.." oncommand="prefwindow.open_file_find_dialog('replay_wget_exe_element', '&prefwindow.Moz_Rewrite.title.dialog_window.request_persistence.wget_exe;',['filterApps']);"/>
+			</hbox>
+
+			<separator class="thin"/>
+			<label value="&prefwindow.Moz_Rewrite.label.request_persistence.replay.run.wget.options;: "/>
+			<textbox preference="replay_wget_options" multiline="false" newlines="stripsurroundingwhitespace" placeholder="-c -nd --no-http-keep-alive --no-check-certificate -e robots=off" flex="1"/>
 		</groupbox>
 
 	</prefpane>

@@ -46,7 +46,7 @@ var Base_Sandbox = Class.extend({
 		return helper_functions.extend_object(super_vars, vars);
 	},
 
-	"call": function(f){
+	"call": function(f, do_cleanup){
 		var self = this;
 		var code, result;
 
@@ -54,7 +54,7 @@ var Base_Sandbox = Class.extend({
 			code	= f.toSource() + '()';
 			self.debug() && self.debug('(call|checkpoint|01): ' + code);
 
-			result	= self.eval(code);
+			result	= self.eval(code, do_cleanup);
 		}
 		else {
 			result	= null;
@@ -62,11 +62,12 @@ var Base_Sandbox = Class.extend({
 		return result;
 	},
 
-	"eval": function(code){
+	"eval": function(code, do_cleanup){
 		var self = this;
+		var result = null;
 
 		// want to execute (source) code while having arbitrary variables in the local scope
-		var local_variables, names, values, name, wrapper_function, result;
+		var local_variables, names, values, name, wrapper_function;
 
 		try {
 			local_variables = self.get_local_variables();
@@ -85,9 +86,9 @@ var Base_Sandbox = Class.extend({
 			result = null;
 		}
 		finally {
-			self.cleanup();
+			if (do_cleanup) self.cleanup();
+			return result;
 		}
-		return result;
 	},
 
 	"cleanup": function(){

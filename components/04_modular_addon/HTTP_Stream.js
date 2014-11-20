@@ -27,18 +27,18 @@ Cu.import("resource://Moz-Rewrite/Class.js");
 Cu.import("resource://Moz-Rewrite/helper_functions.js");
 
 Cu.import("resource://gre/modules/NetUtil.jsm");
-Cu.import("resource://gre/modules/FileUtils.jsm");
 
 var HTTP_Stream = Class.extend({
-	"init": function(auto_init){
-		this.prefs			= helper_functions.get_prefs( (this.type + '.') );
-		this.log			= helper_functions.wrap_console_log(('HTTP_' + this.type + '_stream: '), false);
-		this.rules_file		= null;
-		this.rules_data		= null;
-		this.has_functions	= false;
-		this.watch_timer	= null;
-		this.debug			= null;
-		this.sandbox		= null;		// abstract: Shared_Sandbox
+	"init": function(request_persistence, auto_init){
+		this.prefs					= helper_functions.get_prefs( (this.type + '.') );
+		this.log					= helper_functions.wrap_console_log(('HTTP_' + this.type + '_stream: '), false);
+		this.rules_file				= null;
+		this.rules_data				= null;
+		this.has_functions			= false;
+		this.watch_timer			= null;
+		this.debug					= null;
+		this.sandbox				= null;						// abstract: Shared_Sandbox
+		this.request_persistence	= request_persistence;		// dynamically injected by Moz_Rewrite
 
 		if (auto_init){
 			this.at_startup();
@@ -101,41 +101,15 @@ var HTTP_Stream = Class.extend({
 	"get_rules_file":	function(){
 		var self = this;
 		var rules_file = null;
-		var rules_file_path, special_dirs_pattern, matches, special_dir, relative_path;
+		var debug, rules_file_path;
 
 		try {
 			if (self.prefs.prefHasUserValue("rules_file.path")) {
+				debug				= self.debug() && function(index, text){
+										self.debug('(get_rules_file|checkpoint|' + index + '): ' + text);
+									};
 				rules_file_path		= self.prefs.getCharPref("rules_file.path");
-
-				// trim leading/trailing whitespace
-				rules_file_path		= rules_file_path.replace(/^\s+/,'').replace(/\s+$/,'');
-
-				if (rules_file_path){
-					special_dirs_pattern	= /^\{([^\}]+)\}[\/\\]?(.*)$/;
-					matches					= special_dirs_pattern.exec(rules_file_path);
-					if (matches === null){
-						rules_file			= new FileUtils.File(rules_file_path);
-					}
-					else {
-						special_dir			= matches[1];
-						relative_path		= matches[2];
-
-						if ( self.debug() ){
-							self.debug('(get_rules_file|checkpoint|01): ' + 'special directory (root) path = "' + special_dir + '"');
-							self.debug('(get_rules_file|checkpoint|02): ' + 'relative (file) path = "' + relative_path + '"');
-						}
-
-						rules_file			= FileUtils.getFile(special_dir, relative_path.split(/[\/\\]/), true);
-					}
-
-					if (
-						(! rules_file.exists()) ||
-						(! rules_file.isFile()) ||
-						(! rules_file.isReadable())
-					){
-						throw new Error('file either does not exist or cannot be accessed' + ((rules_file && rules_file.path)? (': ' + rules_file.path) : ''));
-					}
-				}
+				rules_file			= helper_functions.get_file_from_path(rules_file_path, debug);
 			}
 		}
 		catch(e){
@@ -173,7 +147,7 @@ var HTTP_Stream = Class.extend({
 		var rules_data;
 
 		try {
-			rules_data = self.sandbox.eval(file_text);
+			rules_data = self.sandbox.eval(file_text, true);
 			self.debug() && self.debug('(evaluate_rules_file|checkpoint|01): ' + JSON.stringify(rules_data));
 
 			// sanity check
@@ -441,6 +415,7 @@ var HTTP_Stream = Class.extend({
 	},
 
 	"get_HTTP_headers": function(httpChannel, get_response){
+		var self = this;
 		var headers;
 
 		// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIHttpChannel#visitRequestHeaders()
@@ -482,6 +457,32 @@ var HTTP_Stream = Class.extend({
 		}
 	},
 
+	"get_HTTP_POST_data": function(httpChannel){
+		var self = this;
+		var uploadChannel, uploadChannelStream, stream, postBytes, postStr;
+
+		postStr = '';
+		try {
+			uploadChannel			= httpChannel.QueryInterface(Ci.nsIUploadChannel);
+			uploadChannelStream		= uploadChannel.uploadStream;
+			uploadChannelStream.QueryInterface(Ci.nsISeekableStream).seek(Ci.nsISeekableStream.NS_SEEK_SET, 0);
+			stream					= Cc["@mozilla.org/binaryinputstream;1"].createInstance(Ci.nsIBinaryInputStream);
+			stream.setInputStream(uploadChannelStream);
+			postBytes				= stream.readByteArray(stream.available());
+			postStr					= String.fromCharCode.apply(null, postBytes);
+
+			uploadChannelStream		= uploadChannel.uploadStream;
+			uploadChannelStream.QueryInterface(Ci.nsISeekableStream).seek(Ci.nsISeekableStream.NS_SEEK_SET, 0);
+		}
+		catch(e){
+			postStr = '';
+			self.log('(get_HTTP_POST_data|error): ' + e.message);
+		}
+		finally {
+			return postStr;
+		}
+	},
+
 	"process_channel_rules_data": function(url, post_rule_callback){
 		var self = this;
 		var updated_headers = {};
@@ -499,7 +500,7 @@ var HTTP_Stream = Class.extend({
 			var result;
 
 			try {
-				result = self.sandbox.call(f);
+				result = self.sandbox.call(f, false);
 				self.debug() && self.debug('(process_channel_rules_data|sandbox|call(f)|checkpoint|01): ' + 'f = ' + f.toSource() + '; result = ' + JSON.stringify(result));
 			}
 			catch(e){
@@ -598,6 +599,41 @@ var HTTP_Stream = Class.extend({
 		}
 
 		return updated_headers;
+	},
+
+	"save_request": function(httpChannel){
+		var self = this;
+
+		// sanity check
+		if (
+			(! self.sandbox) ||
+			(! self.sandbox.request) ||
+			(! self.sandbox.request.method) ||
+			(! self.sandbox.request.uri) ||
+			(! self.sandbox.request.uri.href)
+		){return false;}
+
+		var request	= {
+			"method"	: (self.sandbox.request.method.toLowerCase()),
+			"url"		: (self.sandbox.request.uri.href),
+			"headers"	: {}
+		};
+
+		switch(request.method){
+			case 'post':
+				request['post_data'] = self.get_HTTP_POST_data(httpChannel);
+			case 'get':
+				helper_functions.extend_object(request.headers, self.sandbox.request.headers.unmodified);
+				helper_functions.extend_object(request.headers, self.sandbox.request.headers.updated);
+
+				self.request_persistence.save(request);
+				return true;
+				break;
+			default:
+				// noop
+				return false;
+				break;
+		}
 	}
 
 });
