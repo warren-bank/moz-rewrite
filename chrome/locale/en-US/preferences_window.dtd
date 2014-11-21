@@ -21,6 +21,7 @@
 <!ENTITY prefwindow.Moz_Rewrite.label.response.rules_file.watch_interval "Watch Interval (ms, 0 to disable)">
 
 <!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.enabled "Enabled">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.RESTful_API.enabled "Detect 'moz-rewrite:' URLs">
 <!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.save_file.path "Path to Output File">
 <!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.save_file.find_button "Find">
 <!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.save_file.maximum_capacity "Maximum Number of Saved Requests">

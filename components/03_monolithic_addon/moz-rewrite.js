@@ -137,6 +137,28 @@ var helper_functions = {
 		}
 
 		return file_handle;
+	},
+
+	"is_file_handle_usable": function(file_handle, methods){
+		var usable = true;
+		var i, method_name;
+
+		usable = usable && (
+			(file_handle !== null) &&
+			(file_handle.exists())
+		);
+
+		if (usable && methods){
+			for (i=0; i<methods.length; i++){
+				method_name	= methods[i];
+				if (typeof file_handle[method_name] === 'function'){
+					usable	= usable && (file_handle[method_name])();
+					if (! usable) break;
+				}
+			}
+		}
+
+		return usable;
 	}
 
 };
@@ -451,6 +473,8 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 		this.redirectTo		= null;
 		this.cancel			= null;
 		this.save			= null;
+		this.print			= null;
+		this.run			= null;
 	},
 
 	"get_local_variables": function(){
@@ -462,7 +486,9 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 			"request"		: (self.request    ||   {}),
 			"redirectTo"	: (self.redirectTo || noop),
 			"cancel"		: (self.cancel     || noop),
-			"save"			: (self.save       || noop)
+			"save"			: (self.save       || noop),
+			"print"			: (self.print      || noop),
+			"run"			: (self.run        || noop)
 		});
 	},
 
@@ -473,6 +499,8 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 		this.redirectTo		= null;
 		this.cancel			= null;
 		this.save			= null;
+		this.print			= null;
+		this.run			= null;
 	}
 
 });
@@ -517,25 +545,22 @@ var HTTP_Request_Persistence = Class.extend({
 	"init": function(){
 		this.prefs					= helper_functions.get_prefs('request_persistence.');
 		this.log					= helper_functions.wrap_console_log(('HTTP_request_persistence: '), false);
-		this.save_file				= null;
-		this.output_directory		= null;
-		this.wget_executable		= null;
-		this.request_queue			= [];
-		this.is_saving				= false;
-
 		this.debug					= null;
+		this.save_file				= null;
+		this.is_locked				= false;
+		this.request_queue			= [];
+		this.read_queue				= [];
 	},
 
-	"at_startup":	function(){
+	"at_startup": function(){
 		var self = this;
 
 		try {
 			// (re)initialize state
 			self.save_file			= null;
-			self.output_directory	= null;
-			self.wget_executable	= null;
 			self.request_queue		= [];
-			self.is_saving			= false;
+			self.is_locked			= false;
+			self.read_queue			= [];
 
 			// check that this stream is enabled
 			if (! self.is_enabled()){return;}
@@ -549,19 +574,21 @@ var HTTP_Request_Persistence = Class.extend({
 
 			// get file/directory handles
 			self.save_file			= self.get_file_handle('save_file.path');
-			self.output_directory	= self.get_file_handle('replay.output_directory.path');
-			self.wget_executable	= self.get_file_handle('replay.run.wget.executable_file.path');
 		}
 		catch(e){
 			self.log('(at_startup|error): ' + e.message);
 		}
 	},
 
-	"is_enabled":	function(){
+	"is_enabled": function(){
 		return this.prefs.getBoolPref("enabled");
 	},
 
-	"get_file_handle":	function(pref_path){
+	"is_RESTful_API_enabled": function(){
+		return this.prefs.getBoolPref("RESTful_API.enabled");
+	},
+
+	"get_file_handle": function(pref_path){
 		var self = this;
 		var file_handle = null;
 		var debug, file_path;
@@ -584,34 +611,24 @@ var HTTP_Request_Persistence = Class.extend({
 		}
 	},
 
-	"is_file_handle_usable":	function(file_handle, methods){
+	"unlock": function(){
 		var self = this;
-		var usable = true;
-		var i, method_name;
 
-		usable = usable && (
-			(file_handle !== null) &&
-			(file_handle.exists())
-		);
+		self.is_locked = false;
 
-		if (usable && methods){
-			for (i=0; i<methods.length; i++){
-				method_name	= methods[i];
-				if (typeof file_handle[method_name] === 'function'){
-					usable	= usable && (file_handle[method_name])();
-					if (! usable) break;
-				}
-			}
+		if (self.read_queue.length > 0){
+			self.process_read_queue();
 		}
-
-		return usable;
+		else if (self.request_queue.length > 0){
+			self.process_request_queue();
+		}
 	},
 
-	"save":	function(request){
+	"save": function(request){
 		var self = this;
 
 		self.request_queue.push(request);
-		if (! self.is_saving){
+		if (! self.is_locked){
 			self.process_request_queue();
 		}
 	},
@@ -619,17 +636,17 @@ var HTTP_Request_Persistence = Class.extend({
 	"process_request_queue": function(){
 		var self = this;
 
-		self.is_saving = true;
+		self.is_locked = true;
 
 		var done = function(stop_processing){
 			if (stop_processing){
 				self.save_file			= null;
 				self.request_queue		= [];
-				self.is_saving			= false;
+				self.unlock();
 				return false;
 			}
 			else if (self.request_queue.length === 0) {
-				self.is_saving			= false;
+				self.unlock();
 				return true;
 			}
 			else {
@@ -643,7 +660,7 @@ var HTTP_Request_Persistence = Class.extend({
 
 		self.debug() && self.debug('(save|process_request_queue|checkpoint|1): ' + 'beginning sanity checks..');
 
-		if (! self.is_file_handle_usable(self.save_file, ['isFile','isReadable','isWritable'])){return done(true);}
+		if (! helper_functions.is_file_handle_usable(self.save_file, ['isFile','isReadable','isWritable'])){return done(true);}
 
 		if (self.request_queue.length === 0){return done();}
 
@@ -674,6 +691,9 @@ var HTTP_Request_Persistence = Class.extend({
 
 		try {
 			request							= self.request_queue.shift();
+
+			// assign the request a unique `id` value (integer, 15 signifant digits)
+			request.id						= Math.floor( Math.random() * Math.pow(10,15) );
 
 			// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIFile
 			// https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O#Writing_a_File
@@ -752,19 +772,316 @@ var HTTP_Request_Persistence = Class.extend({
 			return done();
 		}
 		catch(e){
-			self.log('(save|error): ' + e.message);
+			self.log('(save|process_request_queue|error): ' + e.message);
 			do_cleanup();
 			return done(true);
 		}
 	},
 
-	"at_shutdown":	function(){
+	"get_saved_request": function(id, user_callback){
+		var self = this;
+		var callback;
+
+		callback = function(data){
+			var i, request;
+
+			if (data === null){
+				return user_callback(null);
+			}
+
+			for (i=0; i<data.length; i++){
+				request = data[i];
+				if (
+					(request && request.id) &&
+					(request.id === id)
+				){
+					return user_callback(request);
+				}
+			}
+			return user_callback(null);
+		};
+
+		self.get_saved_requests(callback);
+	},
+
+	"get_saved_requests": function(callback){
+		var self = this;
+
+		self.read_queue.push(callback);
+		if (! self.is_locked){
+			self.process_read_queue();
+		}
+	},
+
+	"process_read_queue": function(){
+		var self = this;
+
+		self.is_locked = true;
+
+		var broadcast = function(data){
+			var callback;
+
+			while(self.read_queue.length > 0){
+				callback = self.read_queue.shift();
+				callback(data);
+			}
+
+			self.unlock();
+			return true;
+		};
+
+		self.debug() && self.debug('(get_saved_requests|process_read_queue|checkpoint|1): ' + 'beginning sanity checks..');
+
+		if (! helper_functions.is_file_handle_usable(self.save_file, ['isFile','isReadable'])){return broadcast(null);}
+
+		if (self.read_queue.length === 0){return broadcast(null);}
+
+		self.debug() && self.debug('(get_saved_requests|process_read_queue|checkpoint|2): ' + 'sanity checks passed');
+
+		NetUtil.asyncFetch(self.save_file, function(inputStream, status) {
+			var data;
+
+			if (!Components.isSuccessCode(status)) {
+				return broadcast(null);
+			}
+
+			try {
+				data = NetUtil.readInputStreamToString(inputStream, inputStream.available());
+				if (! data){
+					return broadcast(null);
+				}
+				// rather than trimming the trailing ','.. it's simpler to just push() an empty object
+				data = '[' + data + '{}]';
+				data = JSON.parse(data);
+
+				if (helper_functions.get_object_constructor_name(data, true) !== 'array'){
+					return broadcast(null);
+				}
+
+				// remove the trailing empty object
+				data.pop();
+				if (data.length === 0){
+					return broadcast(null);
+				}
+
+				// there's valid data in the array
+				self.debug() && self.debug('(get_saved_requests|process_read_queue|asyncFetch|checkpoint|3): ' + data.length + ' HTTP Request objects have been read from save_file');
+				return broadcast(data);
+			}
+			catch(e){
+				self.log('(get_saved_requests|process_read_queue|asyncFetch|error): ' + e.message);
+				return broadcast(null);
+			}
+		});
+
+	},
+
+	"at_shutdown": function(){
 		this.save_file				= null;
-		this.output_directory		= null;
-		this.wget_executable		= null;
 		this.request_queue			= [];
-		this.is_saving				= false;
+		this.is_locked				= false;
+		this.read_queue				= [];
 		this.debug					= null;
+	}
+
+});
+
+// ------------------------------------------------------------------------------------------------ "HTTP_Request_Replay":
+
+var HTTP_Request_Replay = Class.extend({
+	"init": function(request_persistence){
+		this.prefs					= helper_functions.get_prefs('request_persistence.replay.');
+		this.log					= helper_functions.wrap_console_log(('HTTP_request_replay: '), false);
+		this.debug					= null;
+		this.output_directory		= null;
+		this.request_persistence	= request_persistence;
+	},
+
+	"at_startup": function(){
+		var self = this;
+
+		try {
+			// (re)initialize state
+			self.output_directory	= null;
+
+			// check that this stream is enabled
+			if (! self.request_persistence.is_enabled()){return;}
+
+			// (re)initialize debugging logger
+			(function(){
+				var is_disabled;
+				is_disabled			= ( (helper_functions.get_prefs()).getBoolPref("debug") == false );
+				self.debug			= helper_functions.wrap_console_log('HTTP_request_replay: ', is_disabled);
+			})();
+
+			// get file/directory handles
+			self.output_directory	= self.get_file_handle('output_directory.path');
+		}
+		catch(e){
+			self.log('(at_startup|error): ' + e.message);
+		}
+	},
+
+	"get_file_handle": function(pref_path){
+		var self = this;
+		var file_handle = null;
+		var debug, file_path;
+
+		try {
+			if (self.prefs.prefHasUserValue(pref_path)) {
+				debug			= self.debug() && function(index, text){
+									self.debug('(get_file_handle|checkpoint|' + index + '): ' + text);
+								};
+				file_path		= self.prefs.getCharPref(pref_path);
+				file_handle		= helper_functions.get_file_from_path(file_path, debug);
+			}
+		}
+		catch(e){
+			self.log('(get_file_handle|prefs|error): ' + e.message);
+			file_handle = null;
+		}
+		finally {
+			return file_handle;
+		}
+	},
+
+	"replay_request": function(id){
+		// abstract function
+
+		/* --------------------------------------
+		 * on the topic of capturing stdout from `nsIProcess`:
+		 *     https://developer.mozilla.org/en-US/Add-ons/Code_snippets/Running_applications
+		 *     https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIProcess#run()
+		 *
+		 * according to these threads:
+		 *     http://forums.mozillazine.org/viewtopic.php?f=19&p=9726071
+		 *     https://groups.google.com/forum/#!topic/mozilla.dev.extensions/DoDETBB6WbA
+		 * it simply isn't possible.
+		 *
+		 * for this reason, the method signature does NOT include a `user_callback` function.
+		 * --------------------------------------
+		 */
+	},
+
+	"run_process" : function(executable_file, command_line_args){
+		var process;
+
+		try {
+			command_line_args	= command_line_args || [];
+			process				= Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
+			process.init(executable_file);
+			process.run(false, command_line_args, command_line_args.length);
+
+			self.debug() && self.debug('(run_process|checkpoint|1): ' + 'process now running = ' + executable_file.leafName);
+		}
+		catch(e){
+			self.log('(run_process|error): ' + e.message);
+		}
+	},
+
+	"at_shutdown": function(){
+		this.output_directory		= null;
+		this.debug					= null;
+	}
+
+});
+
+// ------------------------------------------------------------------------------------------------ "HTTP_Request_Replay_wget":
+
+var HTTP_Request_Replay_wget = HTTP_Request_Replay.extend({
+	"init": function(request_persistence){
+		this._super(request_persistence);
+		this.wget_executable		= null;
+	},
+
+	"at_startup": function(){
+		this._super();
+		var self = this;
+
+		try {
+			// (re)initialize state
+			self.wget_executable	= null;
+
+			// check that this stream is enabled
+			if (! self.request_persistence.is_enabled()){return;}
+
+			// get file/directory handles
+			self.wget_executable	= self.get_file_handle('run.wget.executable_file.path');
+		}
+		catch(e){
+			self.log('(at_startup|error): ' + e.message);
+		}
+	},
+
+	"replay_request": function(id, do_startup, do_shutdown){
+		var self = this;
+		var callback;
+
+		if (do_startup) self.at_startup();
+
+		// validate file/directory handles
+		if (! helper_functions.is_file_handle_usable(self.output_directory, ['isDirectory','isReadable','isWritable'])){return;}
+		if (! helper_functions.is_file_handle_usable(self.wget_executable,  ['isFile','isExecutable'])){return;}
+
+		callback = function(request){
+			if (
+				(! request) ||
+				(! request.url)
+			){return;}
+
+			var wget_options, command_line_args, header_name, header_value;
+
+			var push_args = function(args){
+				for (var i=0; i<args.length; i++){
+					command_line_args.push(args[i]);
+				}
+			};
+
+			wget_options			= self.prefs.getCharPref('run.wget.options');
+			command_line_args		= wget_options.split(/\s+/);
+
+			/* --------------------------------------
+			 * reference:
+			 *     http://www.gnu.org/software/wget/manual/wget.html
+			 * topic:
+			 *     https://forums.mozilla.org/viewtopic.php?t=9784&p=20984
+			 * important takeaways:
+			 *   - switch and value are separate array elements
+			 *   - do NOT wrap long filepaths in quotes
+			 * --------------------------------------
+			 */
+
+			// output directory
+			push_args([ '-P', (self.output_directory.path) ]);
+
+			// HTTP request headers
+			if (request.headers){
+				for (header_name in request.headers){
+					header_value	= request.headers[header_name];
+
+					push_args([ '--header', (header_name + ': ' + header_value) ]);
+				}
+			}
+
+			// POST message body
+			if (request.post_data){
+				push_args([ '--method', 'POST' ]);
+				push_args([ '--post-data', (request.post_data) ]);
+			}
+
+			// URL
+			push_args([ (request.url) ]);
+
+			self.run_process(self.wget_executable, command_line_args);
+
+			if (do_shutdown) self.at_shutdown();
+		};
+		self.request_persistence.get_saved_request(id, callback);
+	},
+
+	"at_shutdown": function(){
+		this._super();
+		this.wget_executable		= null;
 	}
 
 });
@@ -788,7 +1105,7 @@ var HTTP_Stream = Class.extend({
 		}
 	},
 
-	"at_startup":	function(){
+	"at_startup": function(){
 		var self = this;
 
 		try {
@@ -833,15 +1150,15 @@ var HTTP_Stream = Class.extend({
 		}
 	},
 
-	"is_enabled":	function(){
+	"is_enabled": function(){
 		return this.prefs.getBoolPref("enabled");
 	},
 
-	"get_rules_file_watch_interval":	function(){
+	"get_rules_file_watch_interval": function(){
 		return this.prefs.getIntPref("rules_file.watch_interval");
 	},
 
-	"get_rules_file":	function(){
+	"get_rules_file": function(){
 		var self = this;
 		var rules_file = null;
 		var debug, rules_file_path;
@@ -864,7 +1181,7 @@ var HTTP_Stream = Class.extend({
 		}
 	},
 
-	"read_rules_file":	function(){
+	"read_rules_file": function(){
 		var self = this;
 		var file_text;
 
@@ -885,7 +1202,7 @@ var HTTP_Stream = Class.extend({
 		}
 	},
 
-	"evaluate_rules_file":	function(file_text){
+	"evaluate_rules_file": function(file_text){
 		var self = this;
 		var rules_data;
 
@@ -1027,7 +1344,7 @@ var HTTP_Stream = Class.extend({
 		}
 	},
 
-	"watch_rules_file":	function(){
+	"watch_rules_file": function(){
 		var self = this;
 		var watch_interval = self.get_rules_file_watch_interval();
 		var last_modified_timestamp;
@@ -1079,7 +1396,7 @@ var HTTP_Stream = Class.extend({
 		);
 	},
 
-	"at_shutdown":	function(){
+	"at_shutdown": function(){
 		var self = this;
 
 		if (self.watch_timer){
@@ -1095,7 +1412,7 @@ var HTTP_Stream = Class.extend({
 		self.sandbox.debug	= null;
 	},
 
-	"process_channel":	function(httpChannel){
+	"process_channel": function(httpChannel){
 		// abstract function
 	},
 
@@ -1353,7 +1670,8 @@ var HTTP_Stream = Class.extend({
 			(! self.sandbox.request) ||
 			(! self.sandbox.request.method) ||
 			(! self.sandbox.request.uri) ||
-			(! self.sandbox.request.uri.href)
+			(! self.sandbox.request.uri.href) ||
+			(! self.request_persistence.is_enabled())
 		){return false;}
 
 		var request	= {
@@ -1390,7 +1708,7 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 		this.sandbox	= new HTTP_Request_Sandbox();
 	},
 
-	"process_channel":	function(httpChannel){
+	"process_channel": function(httpChannel){
 		var self = this;
 		var trigger_save = false;
 		var url, post_rule_callback, updated_headers, header_key, header_value;
@@ -1425,6 +1743,78 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 				post_rule_callback = function(updated_headers){
 					if (self.sandbox.request && self.sandbox.request.headers){
 						self.sandbox.request.headers.updated = updated_headers;
+					}
+				};
+			}
+
+			// activate RESTful API?
+			if (
+				(self.request_persistence.is_enabled()) &&
+				(self.request_persistence.is_RESTful_API_enabled())
+			){
+				if (! self.has_functions){
+					// add the minimal necessary contextual variables
+					self.sandbox.request = {
+						"uri": {
+							"href": url
+						}
+					};
+				}
+
+				self.sandbox.print = function(format, user_callback){
+					if (
+						(! format) ||
+						(typeof format !== 'string')
+					){return;}
+
+					switch (format.toLowerCase()){
+						case 'wget':
+							(function(){
+								var callback;
+
+								callback = function(requests){
+									var html, i, request;
+									html = '<html><body><ul>';
+									if (requests){
+										for (i=0; i<requests.length; i++){
+											request = requests[i];
+											html += '<li><a href="moz-rewrite:/run/wget/' + request.id + '">' + request.url + '</a></li>';
+										}
+									}
+									html += '</ul></body></html>';
+									user_callback(html);
+								};
+								self.request_persistence.get_saved_requests(callback);
+							})();
+							break;
+
+						case 'curl':
+							// not yet implemented
+						default:
+							break;
+					}
+				};
+
+				self.sandbox.run = function(format, id){
+					if (
+						(! format) ||
+						(typeof format !== 'string')
+					){return;}
+
+					switch (format.toLowerCase()){
+						case 'wget':
+							(function(){
+								var replay;
+
+								replay = new HTTP_Request_Replay_wget( self.request_persistence );
+								replay.replay_request(id, true, true);
+							})();
+							break;
+
+						case 'curl':
+							// not yet implemented
+						default:
+							break;
 					}
 				};
 			}
@@ -1487,7 +1877,7 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 		this.sandbox	= new HTTP_Response_Sandbox();
 	},
 
-	"at_startup":	function(){
+	"at_startup": function(){
 		this._super();
 
 		var self = this;
@@ -1529,7 +1919,7 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 		}
 	},
 
-	"process_channel":	function(httpChannel){
+	"process_channel": function(httpChannel){
 		var self = this;
 		var trigger_save = false;
 		var url, post_rule_callback, updated_headers, header_key, header_value;

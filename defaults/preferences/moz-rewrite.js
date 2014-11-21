@@ -9,6 +9,7 @@ pref("extensions.Moz-Rewrite.response.rules_file.path","");
 pref("extensions.Moz-Rewrite.response.rules_file.watch_interval",0);
 
 pref("extensions.Moz-Rewrite.request_persistence.enabled",false);
+pref("extensions.Moz-Rewrite.request_persistence.RESTful_API.enabled",false);
 pref("extensions.Moz-Rewrite.request_persistence.save_file.path","");
 pref("extensions.Moz-Rewrite.request_persistence.save_file.maximum_capacity",10);
 pref("extensions.Moz-Rewrite.request_persistence.replay.download_directory.path","{DfltDwnld}");

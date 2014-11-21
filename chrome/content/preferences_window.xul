@@ -27,6 +27,7 @@
 			<preference id="response_rules_file_watch_interval"  name="extensions.Moz-Rewrite.response.rules_file.watch_interval"  type="int"/>
 
 			<preference id="persistence_enabled"                 name="extensions.Moz-Rewrite.request_persistence.enabled"                               type="bool"/>
+			<preference id="persistence_restful_api_enabled"     name="extensions.Moz-Rewrite.request_persistence.RESTful_API.enabled"                   type="bool"/>
 			<preference id="persistence_save_file"               name="extensions.Moz-Rewrite.request_persistence.save_file.path"                        type="string"/>
 			<preference id="persistence_capacity"                name="extensions.Moz-Rewrite.request_persistence.save_file.maximum_capacity"            type="int"/>
 			<preference id="replay_download_directory"           name="extensions.Moz-Rewrite.request_persistence.replay.download_directory.path"        type="string"/>
@@ -83,6 +84,7 @@
 			<caption label="&prefwindow.Moz_Rewrite.heading.request_persistence;"/>
 
 			<checkbox preference="persistence_enabled" label="&prefwindow.Moz_Rewrite.label.request_persistence.enabled;"/>
+			<checkbox preference="persistence_restful_api_enabled" label="&prefwindow.Moz_Rewrite.label.request_persistence.RESTful_API.enabled;"/>
 
 			<separator class="thin"/>
 			<label value="&prefwindow.Moz_Rewrite.label.request_persistence.save_file.path;: "/>

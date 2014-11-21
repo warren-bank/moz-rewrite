@@ -9,7 +9,7 @@
 {
 	"url": new RegExp('^moz-rewrite:[/]*print/([^/]+)$', 'i'),
 	"headers": function(){
-		var matches, format, result;
+		var matches, format, callback;
 		// example:
 		//     moz-rewrite:/print/wget
 		matches		= (new RegExp('^moz-rewrite:[/]*print/([^/]+)$', 'i')).exec(request.uri.href);
@@ -18,7 +18,7 @@
 		switch(format){
 			case 'wget':
 			case 'curl':
-				// to do: implement `print(format)`
+				// to do: test `print(format, callback)`
 				/* --------------------
 				 * reads all of the saved requests from the persistent log file
 				 * removes the final trailing comma
@@ -28,11 +28,13 @@
 				 * returns the string result (for display?)
 				 * --------------------
 				 */
-				result	= print(format);
+				callback = function(result){
+					// http://en.wikipedia.org/wiki/Data_URI_scheme#HTML
+					result	= 'data:text/html;base64,' + base64_encode(result);
+					redirectTo(result);
+				};
 
-				// http://en.wikipedia.org/wiki/Data_URI_scheme#HTML
-				result	= 'data:text/html;base64,' + base64_encode(result);
-				redirectTo(result);
+				print(format, callback);
 				break;
 		}
 		return {};
@@ -42,7 +44,7 @@
 {
 	"url": new RegExp('^moz-rewrite:[/]*run/([^/]+)/(\d+)$', 'i'),
 	"headers": function(){
-		var matches, format, id, callback;
+		var matches, format, id;
 		// example:
 		//     moz-rewrite:/run/wget/12345
 		matches		= (new RegExp('^moz-rewrite:[/]*run/([^/]+)/(\d+)$', 'i')).exec(request.uri.href);
@@ -52,24 +54,15 @@
 		switch(format){
 			case 'wget':
 			case 'curl':
-				//assuming we can capture stdout..
-				callback = function(result){
-					// http://en.wikipedia.org/wiki/Data_URI_scheme#HTML
-					result	= 'data:text/plain;base64,' + base64_encode(result);
-					redirectTo(result);
-				};
-
-				// to do: implement `run(format, id, callback)`
+				// to do: test `run(format, id)`
 				/* --------------------
 				 * same initial steps as `print(format)`
 				 * once the array of requests is obtained,
 				   cherry pick the request having an `id` attribute with a matching value
 				 * use this object to construct an API call using: `nsIProcess`
-				 * IF POSSIBLE, capture stdout. after the child process completes, pass its captured string output to a callback function.
-				   ex: callback(std_output)
 				 * --------------------
 				 */
-				run(format, id, callback);
+				run(format, id);
 				break;
 		}
 		return {};
