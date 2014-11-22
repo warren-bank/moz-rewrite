@@ -158,7 +158,7 @@ var HTTP_Request_Persistence = Class.extend({
 		try {
 			request							= self.request_queue.shift();
 
-			// assign the request a unique `id` value (integer, 15 signifant digits)
+			// assign the request a unique `id` value (integer, 15 significant digits)
 			request.id						= Math.floor( Math.random() * Math.pow(10,15) );
 
 			// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIFile

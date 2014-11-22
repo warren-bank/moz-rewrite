@@ -31,6 +31,7 @@ var HTTP_Request_Replay = Class.extend({
 		this.prefs					= helper_functions.get_prefs('request_persistence.replay.');
 		this.log					= helper_functions.wrap_console_log(('HTTP_request_replay: '), false);
 		this.debug					= null;
+		this.binary_executable		= null;
 		this.download_directory		= null;
 		this.request_persistence	= request_persistence;
 	},
@@ -40,6 +41,7 @@ var HTTP_Request_Replay = Class.extend({
 
 		try {
 			// (re)initialize state
+			self.binary_executable	= null;
 			self.download_directory	= null;
 
 			// check that this stream is enabled
@@ -66,14 +68,35 @@ var HTTP_Request_Replay = Class.extend({
 		return helper_functions.get_file_from_preference(pref_path, self.prefs, self.log, self.debug);
 	},
 
-	"replay_request_id": function(id){
-		// abstract function
+	"validate_file_handles": function(){
+		var self = this;
 
+		return (
+			(helper_functions.is_file_handle_usable(self.download_directory, ['isDirectory','isReadable','isWritable'])) &&
+			(helper_functions.is_file_handle_usable(self.binary_executable,  ['isFile','isExecutable']))
+		);
+	},
+
+	"replay_request_id": function(id){
 		/* --------------------------------------
 		 * since there's no way to capture stdout,
 		 * the method signature does NOT include a `user_callback` function.
 		 * --------------------------------------
 		 */
+		var self = this;
+		var callback;
+
+		self.debug() && self.debug('(replay_request_id|checkpoint|1): ' + 'beginning sanity checks..');
+
+		// validate file/directory handles
+		if (! self.validate_file_handles()){return;}
+
+		self.debug() && self.debug('(replay_request_id|checkpoint|2): ' + 'file handles are OK..');
+
+		callback = function(request){
+			self.replay_request(request);
+		};
+		self.request_persistence.get_saved_request(id, callback);
 	},
 
 	"replay_request": function(request){
@@ -115,6 +138,7 @@ var HTTP_Request_Replay = Class.extend({
 	},
 
 	"at_shutdown": function(){
+		this.binary_executable		= null;
 		this.download_directory		= null;
 		this.debug					= null;
 	}

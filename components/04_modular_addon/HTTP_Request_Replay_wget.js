@@ -27,46 +27,20 @@ Cu.import("resource://Moz-Rewrite/HTTP_Request_Replay.js");
 Cu.import("resource://Moz-Rewrite/helper_functions.js");
 
 var HTTP_Request_Replay_wget = HTTP_Request_Replay.extend({
-	"init": function(request_persistence){
-		this._super(request_persistence);
-		this.wget_executable		= null;
-	},
-
 	"at_startup": function(){
 		this._super();
 		var self = this;
 
+		// sanity check
+		if (! self.download_directory){return;}
+
 		try {
-			// (re)initialize state
-			self.wget_executable	= null;
-
-			// check that this stream is enabled
-			if (! self.request_persistence.is_enabled()){return;}
-
 			// get file/directory handles
-			self.wget_executable	= self.get_file_handle('run.wget.executable_file.path');
+			self.binary_executable = self.get_file_handle('run.wget.executable_file.path');
 		}
 		catch(e){
 			self.log('(at_startup|error): ' + e.message);
 		}
-	},
-
-	"replay_request_id": function(id){
-		var self = this;
-		var callback;
-
-		self.debug() && self.debug('(replay_request_id|checkpoint|1): ' + 'beginning sanity checks..');
-
-		// validate file/directory handles
-		if (! helper_functions.is_file_handle_usable(self.download_directory, ['isDirectory','isReadable','isWritable'])){return;}
-		if (! helper_functions.is_file_handle_usable(self.wget_executable,  ['isFile','isExecutable'])){return;}
-
-		self.debug() && self.debug('(replay_request_id|checkpoint|2): ' + 'file handles are OK..');
-
-		callback = function(request){
-			self.replay_request(request);
-		};
-		self.request_persistence.get_saved_request(id, callback);
 	},
 
 	"replay_request": function(request){
@@ -75,8 +49,7 @@ var HTTP_Request_Replay_wget = HTTP_Request_Replay.extend({
 		self.debug() && self.debug('(replay_request|checkpoint|1): ' + 'beginning sanity checks..');
 
 		// validate file/directory handles
-		if (! helper_functions.is_file_handle_usable(self.download_directory, ['isDirectory','isReadable','isWritable'])){return;}
-		if (! helper_functions.is_file_handle_usable(self.wget_executable,  ['isFile','isExecutable'])){return;}
+		if (! self.validate_file_handles()){return;}
 
 		self.debug() && self.debug('(replay_request|checkpoint|2): ' + 'file handles are OK..');
 
@@ -99,13 +72,16 @@ var HTTP_Request_Replay_wget = HTTP_Request_Replay.extend({
 		command_line_args		= wget_options.split(/\s+/);
 
 		/* --------------------------------------
-		 * reference:
+		 * references:
 		 *     http://www.gnu.org/software/wget/manual/wget.html
-		 * topic:
-		 *     https://forums.mozilla.org/viewtopic.php?t=9784&p=20984
-		 * important takeaways:
-		 *   - switch and value are separate array elements
-		 *   - do NOT wrap long filepaths in quotes
+		 * topics:
+		 *   - https://forums.mozilla.org/viewtopic.php?t=9784&p=20984
+		 *     important takeaways:
+		 *       - switch and value are separate array elements
+		 *       - do NOT wrap long filepaths in quotes
+		 *   - http://en.wikipedia.org/wiki/POST_%28HTTP%29#Use_for_submitting_web_forms
+		 *     important takeaways:
+		 *       - POST data is already URL encoded
 		 * --------------------------------------
 		 */
 
@@ -130,14 +106,9 @@ var HTTP_Request_Replay_wget = HTTP_Request_Replay.extend({
 		// URL
 		push_args([ (request.url) ]);
 
-		self.debug() && self.debug('(replay_request|checkpoint|4): ' + 'spawning process => "' + self.wget_executable.path + '" "' + command_line_args.join('" "') + '"');
+		self.debug() && self.debug('(replay_request|checkpoint|4): ' + 'spawning process => "' + self.binary_executable.path + '" "' + command_line_args.join('" "') + '"');
 
-		self.run_process(self.wget_executable, command_line_args);
-	},
-
-	"at_shutdown": function(){
-		this._super();
-		this.wget_executable		= null;
+		self.run_process(self.binary_executable, command_line_args);
 	}
 
 });
