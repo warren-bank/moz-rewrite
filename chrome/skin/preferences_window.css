@@ -1,7 +1,43 @@
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 
 #Moz-Rewrite-prefs,
-#Moz-Rewrite-pane {
+#Moz-Rewrite-prefs #Moz-Rewrite-pane,
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabbox,
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabbox tabpanels,
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabbox tabpanels > tabpanel,
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabbox tabpanels > tabpanel > vbox,
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabbox tabpanels > tabpanel > vbox > groupbox {
+	margin:				0px;
+	padding:			0px;
+}
+#Moz-Rewrite-prefs,
+#Moz-Rewrite-prefs #Moz-Rewrite-pane {
+	width:				600px;
+}
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabbox {
+	margin:				15px;
+}
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabbox,
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabbox tabpanels,
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabbox tabpanels > tabpanel,
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabbox tabpanels > tabpanel > vbox {
+	width:				570px;		/* 600 -(15)(2) */
+}
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabbox tabpanels > tabpanel > vbox > groupbox {
+	margin:				15px;
+	padding:			15px;
+	width:				510px;		/* 600 -(15)(2) -(15)(2) -(15)(2) */
+}
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabbox tabpanels > tabpanel > vbox > groupbox + groupbox {
+	margin-top:			0px;
+}
+
+#Moz-Rewrite-prefs,
+#Moz-Rewrite-prefs #Moz-Rewrite-pane {
 	background-color:	#fff;
-	width:				500px;
+}
+#Moz-Rewrite-prefs #Moz-Rewrite-pane tabs > tab {
+	padding:			6px;
+	font-size:			1.15em;
+	font-weight:		bold;
 }

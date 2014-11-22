@@ -23,6 +23,8 @@ const Cc				= Components.classes;
 const Cu				= Components.utils;
 const Cr				= Components.results;
 
+Cu.import("resource://gre/modules/NetUtil.jsm");
+
 Cu.import("resource://Moz-Rewrite/Class.js");
 Cu.import("resource://Moz-Rewrite/helper_functions.js");
 
@@ -30,25 +32,22 @@ var HTTP_Request_Persistence = Class.extend({
 	"init": function(){
 		this.prefs					= helper_functions.get_prefs('request_persistence.');
 		this.log					= helper_functions.wrap_console_log(('HTTP_request_persistence: '), false);
-		this.save_file				= null;
-		this.output_directory		= null;
-		this.wget_executable		= null;
-		this.request_queue			= [];
-		this.is_saving				= false;
-
 		this.debug					= null;
+		this.save_file				= null;
+		this.is_locked				= false;
+		this.request_queue			= [];
+		this.read_queue				= [];
 	},
 
-	"at_startup":	function(){
+	"at_startup": function(){
 		var self = this;
 
 		try {
 			// (re)initialize state
 			self.save_file			= null;
-			self.output_directory	= null;
-			self.wget_executable	= null;
 			self.request_queue		= [];
-			self.is_saving			= false;
+			self.is_locked			= false;
+			self.read_queue			= [];
 
 			// check that this stream is enabled
 			if (! self.is_enabled()){return;}
@@ -62,69 +61,40 @@ var HTTP_Request_Persistence = Class.extend({
 
 			// get file/directory handles
 			self.save_file			= self.get_file_handle('save_file.path');
-			self.output_directory	= self.get_file_handle('replay.output_directory.path');
-			self.wget_executable	= self.get_file_handle('replay.run.wget.executable_file.path');
 		}
 		catch(e){
 			self.log('(at_startup|error): ' + e.message);
 		}
 	},
 
-	"is_enabled":	function(){
+	"is_enabled": function(){
 		return this.prefs.getBoolPref("enabled");
 	},
 
-	"get_file_handle":	function(pref_path){
+	"get_file_handle": function(pref_path){
 		var self = this;
-		var file_handle = null;
-		var debug, file_path;
 
-		try {
-			if (self.prefs.prefHasUserValue(pref_path)) {
-				debug			= self.debug() && function(index, text){
-									self.debug('(get_file_handle|checkpoint|' + index + '): ' + text);
-								};
-				file_path		= self.prefs.getCharPref(pref_path);
-				file_handle		= helper_functions.get_file_from_path(file_path, debug);
-			}
+		return helper_functions.get_file_from_preference(pref_path, self.prefs, self.log, self.debug);
+	},
+
+	"unlock": function(){
+		var self = this;
+
+		self.is_locked = false;
+
+		if (self.read_queue.length > 0){
+			self.process_read_queue();
 		}
-		catch(e){
-			self.log('(get_file_handle|prefs|error): ' + e.message);
-			file_handle = null;
-		}
-		finally {
-			return file_handle;
+		else if (self.request_queue.length > 0){
+			self.process_request_queue();
 		}
 	},
 
-	"is_file_handle_usable":	function(file_handle, methods){
-		var self = this;
-		var usable = true;
-		var i, method_name;
-
-		usable = usable && (
-			(file_handle !== null) &&
-			(file_handle.exists())
-		);
-
-		if (usable && methods){
-			for (i=0; i<methods.length; i++){
-				method_name	= methods[i];
-				if (typeof file_handle[method_name] === 'function'){
-					usable	= usable && (file_handle[method_name])();
-					if (! usable) break;
-				}
-			}
-		}
-
-		return usable;
-	},
-
-	"save":	function(request){
+	"save": function(request){
 		var self = this;
 
 		self.request_queue.push(request);
-		if (! self.is_saving){
+		if (! self.is_locked){
 			self.process_request_queue();
 		}
 	},
@@ -132,17 +102,17 @@ var HTTP_Request_Persistence = Class.extend({
 	"process_request_queue": function(){
 		var self = this;
 
-		self.is_saving = true;
+		self.is_locked = true;
 
 		var done = function(stop_processing){
 			if (stop_processing){
 				self.save_file			= null;
 				self.request_queue		= [];
-				self.is_saving			= false;
+				self.unlock();
 				return false;
 			}
 			else if (self.request_queue.length === 0) {
-				self.is_saving			= false;
+				self.unlock();
 				return true;
 			}
 			else {
@@ -156,7 +126,7 @@ var HTTP_Request_Persistence = Class.extend({
 
 		self.debug() && self.debug('(save|process_request_queue|checkpoint|1): ' + 'beginning sanity checks..');
 
-		if (! self.is_file_handle_usable(self.save_file, ['isFile','isReadable','isWritable'])){return done(true);}
+		if (! helper_functions.is_file_handle_usable(self.save_file, ['isFile','isReadable','isWritable'])){return done(true);}
 
 		if (self.request_queue.length === 0){return done();}
 
@@ -187,6 +157,9 @@ var HTTP_Request_Persistence = Class.extend({
 
 		try {
 			request							= self.request_queue.shift();
+
+			// assign the request a unique `id` value (integer, 15 signifant digits)
+			request.id						= Math.floor( Math.random() * Math.pow(10,15) );
 
 			// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIFile
 			// https://developer.mozilla.org/en-US/Add-ons/Code_snippets/File_I_O#Writing_a_File
@@ -265,18 +238,115 @@ var HTTP_Request_Persistence = Class.extend({
 			return done();
 		}
 		catch(e){
-			self.log('(save|error): ' + e.message);
+			self.log('(save|process_request_queue|error): ' + e.message);
 			do_cleanup();
 			return done(true);
 		}
 	},
 
-	"at_shutdown":	function(){
+	"get_saved_request": function(id, user_callback){
+		var self = this;
+		var callback;
+
+		callback = function(data){
+			var i, request;
+
+			if (data === null){
+				return user_callback(null);
+			}
+
+			for (i=0; i<data.length; i++){
+				request = data[i];
+				if (
+					(request && request.id) &&
+					(request.id === id)
+				){
+					return user_callback(request);
+				}
+			}
+			return user_callback(null);
+		};
+
+		self.get_saved_requests(callback);
+	},
+
+	"get_saved_requests": function(callback){
+		var self = this;
+
+		self.read_queue.push(callback);
+		if (! self.is_locked){
+			self.process_read_queue();
+		}
+	},
+
+	"process_read_queue": function(){
+		var self = this;
+
+		self.is_locked = true;
+
+		var broadcast = function(data){
+			var callback;
+
+			while(self.read_queue.length > 0){
+				callback = self.read_queue.shift();
+				callback(data);
+			}
+
+			self.unlock();
+			return true;
+		};
+
+		self.debug() && self.debug('(get_saved_requests|process_read_queue|checkpoint|1): ' + 'beginning sanity checks..');
+
+		if (! helper_functions.is_file_handle_usable(self.save_file, ['isFile','isReadable'])){return broadcast(null);}
+
+		if (self.read_queue.length === 0){return broadcast(null);}
+
+		self.debug() && self.debug('(get_saved_requests|process_read_queue|checkpoint|2): ' + 'sanity checks passed');
+
+		NetUtil.asyncFetch(self.save_file, function(inputStream, status) {
+			var data;
+
+			if (!Components.isSuccessCode(status)) {
+				return broadcast(null);
+			}
+
+			try {
+				data = NetUtil.readInputStreamToString(inputStream, inputStream.available());
+				if (! data){
+					return broadcast(null);
+				}
+				// rather than trimming the trailing ','.. it's simpler to just push() an empty object
+				data = '[' + data + '{}]';
+				data = JSON.parse(data);
+
+				if (helper_functions.get_object_constructor_name(data, true) !== 'array'){
+					return broadcast(null);
+				}
+
+				// remove the trailing empty object
+				data.pop();
+				if (data.length === 0){
+					return broadcast(null);
+				}
+
+				// there's valid data in the array
+				self.debug() && self.debug('(get_saved_requests|process_read_queue|asyncFetch|checkpoint|3): ' + data.length + ' HTTP Request objects have been read from save_file');
+				return broadcast(data);
+			}
+			catch(e){
+				self.log('(get_saved_requests|process_read_queue|asyncFetch|error): ' + e.message);
+				return broadcast(null);
+			}
+		});
+
+	},
+
+	"at_shutdown": function(){
 		this.save_file				= null;
-		this.output_directory		= null;
-		this.wget_executable		= null;
 		this.request_queue			= [];
-		this.is_saving				= false;
+		this.is_locked				= false;
+		this.read_queue				= [];
 		this.debug					= null;
 	}
 

@@ -1,0 +1,3 @@
+<!ENTITY overlay.browser.Moz_Rewrite.tools_menu.heading "moz-rewrite">
+<!ENTITY overlay.browser.Moz_Rewrite.tools_menu.item.preferences "user preferences">
+<!ENTITY overlay.browser.Moz_Rewrite.tools_menu.item.request_persistence "view/replay saved requests">

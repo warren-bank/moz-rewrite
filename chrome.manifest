@@ -24,11 +24,13 @@ skin Moz-Rewrite hfskin chrome/skin/
 # =========================================================
 # active:
 # =======
-resource Moz-Rewrite components/03_monolithic_addon/
-component {1f5c019c-16d0-4c8e-a397-effac1253135} components/03_monolithic_addon/moz-rewrite.js
+resource Moz-Rewrite components/04_modular_addon/
+component {1f5c019c-16d0-4c8e-a397-effac1253135} components/04_modular_addon/moz-rewrite.js
 # =========================================================
 
 contract @github.com/moz-rewrite;1 {1f5c019c-16d0-4c8e-a397-effac1253135}
 category profile-after-change Moz-Rewrite @github.com/moz-rewrite;1
 
 locale Moz-Rewrite en-US chrome/locale/en-US/
+
+overlay chrome://browser/content/browser.xul chrome://Moz-Rewrite/content/browser-overlay.xul

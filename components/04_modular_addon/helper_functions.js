@@ -95,6 +95,28 @@ var helper_functions = {
 		return (raw? o2 : JSON.stringify(o2));
 	},
 
+	"get_file_from_preference": function(pref_path, prefs_branch, logger, wrapped_debug_logger){
+		var file_handle = null;
+		var debug, file_path;
+
+		try {
+			if (prefs_branch.prefHasUserValue(pref_path)) {
+				debug			= wrapped_debug_logger && wrapped_debug_logger() && function(index, text){
+									wrapped_debug_logger('(get_file_from_preference|checkpoint|' + index + '): ' + text);
+								};
+				file_path		= prefs_branch.getCharPref(pref_path);
+				file_handle		= helper_functions.get_file_from_path(file_path, debug);
+			}
+		}
+		catch(e){
+			logger && logger('(get_file_from_preference|error): ' + e.message);
+			file_handle = null;
+		}
+		finally {
+			return file_handle;
+		}
+	},
+
 	// throws Exception
 	"get_file_from_path": function(file_path, debug){
 		var special_dirs_pattern, matches, special_dir, relative_path;
@@ -123,7 +145,6 @@ var helper_functions = {
 
 			if (
 				(! file_handle.exists()) ||
-				(! file_handle.isFile()) ||
 				(! file_handle.isReadable())
 			){
 				throw new Error('file either does not exist or cannot be accessed' + ((file_handle && file_handle.path)? (': ' + file_handle.path) : ''));
@@ -131,6 +152,28 @@ var helper_functions = {
 		}
 
 		return file_handle;
+	},
+
+	"is_file_handle_usable": function(file_handle, methods){
+		var usable = true;
+		var i, method_name;
+
+		usable = usable && (
+			(file_handle !== null) &&
+			(file_handle.exists())
+		);
+
+		if (usable && methods){
+			for (i=0; i<methods.length; i++){
+				method_name	= methods[i];
+				if (typeof file_handle[method_name] === 'function'){
+					usable	= usable && (file_handle[method_name])();
+					if (! usable) break;
+				}
+			}
+		}
+
+		return usable;
 	}
 
 };

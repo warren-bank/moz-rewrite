@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet href="chrome://global/skin/" type"text/css" type="text/css"?>
+<?xml-stylesheet href="chrome://Moz-Rewrite/skin/request_persistence.css" type="text/css"?>
+<!DOCTYPE overlay SYSTEM "chrome://Moz-Rewrite/locale/request_persistence.dtd">
+
+<window id="wget_rewrite_request_persistence"
+	title="&window.Moz_Rewrite.request_persistence.title.window;"
+	xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+	<script type="application/x-javascript" src="chrome://Moz-Rewrite/content/request_persistence.js"/>
+
+	<vbox>
+		<groupbox id="wget_rewrite_persistent_requests">
+			<caption label="&window.Moz_Rewrite.request_persistence.heading.saved_requests;"/>
+
+			<!--
+				<checkbox id="12345" checked="false" label="http://foo.bar/baz?hello="/>
+			-->
+		</groupbox>
+
+		<separator class="thin"/>
+
+		<hbox>
+			<button type="menu" label="&window.Moz_Rewrite.request_persistence.label.replay_options_button;..  " flex="0">
+				<menupopup>
+					<menuitem label="wget" value="wget" oncommand="wget_rewrite_request_persistence_dialog.on_replay(this.value)" />
+				</menupopup>
+			</button>
+			<spacer flex="1"/>
+		</hbox>
+	</vbox>
+</window>

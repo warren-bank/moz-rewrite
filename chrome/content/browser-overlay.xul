@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE overlay SYSTEM "chrome://Moz-Rewrite/locale/browser-overlay.dtd">
+<overlay id="wget_rewrite_overlay" xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
+
+	<window id="main-window">
+		<commandset id="wget_rewrite_commandset">
+			<command id="wget_rewrite_preferences"
+				oncommand="window.openDialog('chrome://Moz-Rewrite/content/preferences_window.xul','moz_rewrite_preferences_dialog','centerscreen, chrome, resizable').focus();"
+				label="&overlay.browser.Moz_Rewrite.tools_menu.item.preferences;"
+			/>
+			<!--
+				oncommand="window.openDialog('chrome://Moz-Rewrite/content/preferences_window.xul','moz_rewrite_preferences_dialog','centerscreen, chrome, resizable').focus();"
+				oncommand="BrowserOpenAddonsMgr('addons://detail/' + encodeURIComponent('moz-rewrite@warren-bank.github.com') + '');"
+				oncommand="BrowserOpenAddonsMgr('addons://detail/' + encodeURIComponent('moz-rewrite@warren-bank.github.com') + '/preferences');"
+			-->
+			<command id="wget_rewrite_request_persistence"
+				oncommand="window.openDialog('chrome://Moz-Rewrite/content/request_persistence.xul','moz_rewrite_request_persistence_dialog','centerscreen, chrome, resizable').focus();"
+				label="&overlay.browser.Moz_Rewrite.tools_menu.item.request_persistence;"
+			/>
+		</commandset>
+	</window>
+
+	<menupopup id="menu_ToolsPopup">
+		<menu id="wget_rewrite_menu"
+			class="menu-iconic"
+			image="chrome://Moz-Rewrite/skin/logo-16x16.png"
+			label="&overlay.browser.Moz_Rewrite.tools_menu.heading;"
+		>
+			<menupopup id="wget_rewrite_menupopup">
+				<menuitem id="wget_rewrite_menu_preferences"
+					command="wget_rewrite_preferences"
+					class="menuitem-iconic"
+					image="chrome://Moz-Rewrite/skin/icon-pref.png"
+				/>
+				<menuitem id="wget_rewrite_menu_request_persistence"
+					command="wget_rewrite_request_persistence"
+					class="menuitem-iconic"
+					image="chrome://Moz-Rewrite/skin/icon-saved.gif"
+				/>
+			</menupopup>
+		</menu>
+	</menupopup>
+
+</overlay>

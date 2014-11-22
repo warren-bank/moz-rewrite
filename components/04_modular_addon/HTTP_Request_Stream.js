@@ -33,7 +33,7 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 		this.sandbox	= new HTTP_Request_Sandbox();
 	},
 
-	"process_channel":	function(httpChannel){
+	"process_channel": function(httpChannel){
 		var self = this;
 		var trigger_save = false;
 		var url, post_rule_callback, updated_headers, header_key, header_value;

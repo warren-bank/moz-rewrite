@@ -1,0 +1,9 @@
+@namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
+
+#wget_rewrite_request_persistence {
+	padding:	15px;
+}
+
+#wget_rewrite_request_persistence #wget_rewrite_persistent_requests > * {
+	white-space: nowrap;
+}

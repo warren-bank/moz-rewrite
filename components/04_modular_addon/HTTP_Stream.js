@@ -45,7 +45,7 @@ var HTTP_Stream = Class.extend({
 		}
 	},
 
-	"at_startup":	function(){
+	"at_startup": function(){
 		var self = this;
 
 		try {
@@ -90,15 +90,15 @@ var HTTP_Stream = Class.extend({
 		}
 	},
 
-	"is_enabled":	function(){
+	"is_enabled": function(){
 		return this.prefs.getBoolPref("enabled");
 	},
 
-	"get_rules_file_watch_interval":	function(){
+	"get_rules_file_watch_interval": function(){
 		return this.prefs.getIntPref("rules_file.watch_interval");
 	},
 
-	"get_rules_file":	function(){
+	"get_rules_file": function(){
 		var self = this;
 		var rules_file = null;
 		var debug, rules_file_path;
@@ -121,7 +121,7 @@ var HTTP_Stream = Class.extend({
 		}
 	},
 
-	"read_rules_file":	function(){
+	"read_rules_file": function(){
 		var self = this;
 		var file_text;
 
@@ -142,7 +142,7 @@ var HTTP_Stream = Class.extend({
 		}
 	},
 
-	"evaluate_rules_file":	function(file_text){
+	"evaluate_rules_file": function(file_text){
 		var self = this;
 		var rules_data;
 
@@ -284,7 +284,7 @@ var HTTP_Stream = Class.extend({
 		}
 	},
 
-	"watch_rules_file":	function(){
+	"watch_rules_file": function(){
 		var self = this;
 		var watch_interval = self.get_rules_file_watch_interval();
 		var last_modified_timestamp;
@@ -336,7 +336,7 @@ var HTTP_Stream = Class.extend({
 		);
 	},
 
-	"at_shutdown":	function(){
+	"at_shutdown": function(){
 		var self = this;
 
 		if (self.watch_timer){
@@ -352,7 +352,7 @@ var HTTP_Stream = Class.extend({
 		self.sandbox.debug	= null;
 	},
 
-	"process_channel":	function(httpChannel){
+	"process_channel": function(httpChannel){
 		// abstract function
 	},
 
@@ -610,7 +610,8 @@ var HTTP_Stream = Class.extend({
 			(! self.sandbox.request) ||
 			(! self.sandbox.request.method) ||
 			(! self.sandbox.request.uri) ||
-			(! self.sandbox.request.uri.href)
+			(! self.sandbox.request.uri.href) ||
+			(! self.request_persistence.is_enabled())
 		){return false;}
 
 		var request	= {

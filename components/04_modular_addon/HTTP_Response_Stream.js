@@ -34,7 +34,7 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 		this.sandbox	= new HTTP_Response_Sandbox();
 	},
 
-	"at_startup":	function(){
+	"at_startup": function(){
 		this._super();
 
 		var self = this;
@@ -76,7 +76,7 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 		}
 	},
 
-	"process_channel":	function(httpChannel){
+	"process_channel": function(httpChannel){
 		var self = this;
 		var trigger_save = false;
 		var url, post_rule_callback, updated_headers, header_key, header_value;

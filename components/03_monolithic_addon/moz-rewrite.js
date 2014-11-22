@@ -101,6 +101,28 @@ var helper_functions = {
 		return (raw? o2 : JSON.stringify(o2));
 	},
 
+	"get_file_from_preference": function(pref_path, prefs_branch, logger, wrapped_debug_logger){
+		var file_handle = null;
+		var debug, file_path;
+
+		try {
+			if (prefs_branch.prefHasUserValue(pref_path)) {
+				debug			= wrapped_debug_logger && wrapped_debug_logger() && function(index, text){
+									wrapped_debug_logger('(get_file_from_preference|checkpoint|' + index + '): ' + text);
+								};
+				file_path		= prefs_branch.getCharPref(pref_path);
+				file_handle		= helper_functions.get_file_from_path(file_path, debug);
+			}
+		}
+		catch(e){
+			logger && logger('(get_file_from_preference|error): ' + e.message);
+			file_handle = null;
+		}
+		finally {
+			return file_handle;
+		}
+	},
+
 	// throws Exception
 	"get_file_from_path": function(file_path, debug){
 		var special_dirs_pattern, matches, special_dir, relative_path;
@@ -129,7 +151,6 @@ var helper_functions = {
 
 			if (
 				(! file_handle.exists()) ||
-				(! file_handle.isFile()) ||
 				(! file_handle.isReadable())
 			){
 				throw new Error('file either does not exist or cannot be accessed' + ((file_handle && file_handle.path)? (': ' + file_handle.path) : ''));
@@ -473,8 +494,6 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 		this.redirectTo		= null;
 		this.cancel			= null;
 		this.save			= null;
-		this.print			= null;
-		this.run			= null;
 	},
 
 	"get_local_variables": function(){
@@ -486,9 +505,7 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 			"request"		: (self.request    ||   {}),
 			"redirectTo"	: (self.redirectTo || noop),
 			"cancel"		: (self.cancel     || noop),
-			"save"			: (self.save       || noop),
-			"print"			: (self.print      || noop),
-			"run"			: (self.run        || noop)
+			"save"			: (self.save       || noop)
 		});
 	},
 
@@ -499,8 +516,6 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 		this.redirectTo		= null;
 		this.cancel			= null;
 		this.save			= null;
-		this.print			= null;
-		this.run			= null;
 	}
 
 });
@@ -584,31 +599,10 @@ var HTTP_Request_Persistence = Class.extend({
 		return this.prefs.getBoolPref("enabled");
 	},
 
-	"is_RESTful_API_enabled": function(){
-		return this.prefs.getBoolPref("RESTful_API.enabled");
-	},
-
 	"get_file_handle": function(pref_path){
 		var self = this;
-		var file_handle = null;
-		var debug, file_path;
 
-		try {
-			if (self.prefs.prefHasUserValue(pref_path)) {
-				debug			= self.debug() && function(index, text){
-									self.debug('(get_file_handle|checkpoint|' + index + '): ' + text);
-								};
-				file_path		= self.prefs.getCharPref(pref_path);
-				file_handle		= helper_functions.get_file_from_path(file_path, debug);
-			}
-		}
-		catch(e){
-			self.log('(get_file_handle|prefs|error): ' + e.message);
-			file_handle = null;
-		}
-		finally {
-			return file_handle;
-		}
+		return helper_functions.get_file_from_preference(pref_path, self.prefs, self.log, self.debug);
 	},
 
 	"unlock": function(){
@@ -893,7 +887,7 @@ var HTTP_Request_Replay = Class.extend({
 		this.prefs					= helper_functions.get_prefs('request_persistence.replay.');
 		this.log					= helper_functions.wrap_console_log(('HTTP_request_replay: '), false);
 		this.debug					= null;
-		this.output_directory		= null;
+		this.download_directory		= null;
 		this.request_persistence	= request_persistence;
 	},
 
@@ -902,7 +896,7 @@ var HTTP_Request_Replay = Class.extend({
 
 		try {
 			// (re)initialize state
-			self.output_directory	= null;
+			self.download_directory	= null;
 
 			// check that this stream is enabled
 			if (! self.request_persistence.is_enabled()){return;}
@@ -915,7 +909,7 @@ var HTTP_Request_Replay = Class.extend({
 			})();
 
 			// get file/directory handles
-			self.output_directory	= self.get_file_handle('output_directory.path');
+			self.download_directory	= self.get_file_handle('download_directory.path');
 		}
 		catch(e){
 			self.log('(at_startup|error): ' + e.message);
@@ -924,30 +918,32 @@ var HTTP_Request_Replay = Class.extend({
 
 	"get_file_handle": function(pref_path){
 		var self = this;
-		var file_handle = null;
-		var debug, file_path;
 
-		try {
-			if (self.prefs.prefHasUserValue(pref_path)) {
-				debug			= self.debug() && function(index, text){
-									self.debug('(get_file_handle|checkpoint|' + index + '): ' + text);
-								};
-				file_path		= self.prefs.getCharPref(pref_path);
-				file_handle		= helper_functions.get_file_from_path(file_path, debug);
-			}
-		}
-		catch(e){
-			self.log('(get_file_handle|prefs|error): ' + e.message);
-			file_handle = null;
-		}
-		finally {
-			return file_handle;
-		}
+		return helper_functions.get_file_from_preference(pref_path, self.prefs, self.log, self.debug);
 	},
 
-	"replay_request": function(id){
+	"replay_request_id": function(id){
 		// abstract function
 
+		/* --------------------------------------
+		 * since there's no way to capture stdout,
+		 * the method signature does NOT include a `user_callback` function.
+		 * --------------------------------------
+		 */
+	},
+
+	"replay_request": function(request){
+		// abstract function
+
+		/* --------------------------------------
+		 * since there's no way to capture stdout,
+		 * the method signature does NOT include a `user_callback` function.
+		 * --------------------------------------
+		 */
+	},
+
+	"run_process" : function(executable_file, command_line_args){
+		var self = this;
 		/* --------------------------------------
 		 * on the topic of capturing stdout from `nsIProcess`:
 		 *     https://developer.mozilla.org/en-US/Add-ons/Code_snippets/Running_applications
@@ -957,13 +953,8 @@ var HTTP_Request_Replay = Class.extend({
 		 *     http://forums.mozillazine.org/viewtopic.php?f=19&p=9726071
 		 *     https://groups.google.com/forum/#!topic/mozilla.dev.extensions/DoDETBB6WbA
 		 * it simply isn't possible.
-		 *
-		 * for this reason, the method signature does NOT include a `user_callback` function.
 		 * --------------------------------------
 		 */
-	},
-
-	"run_process" : function(executable_file, command_line_args){
 		var process;
 
 		try {
@@ -980,7 +971,7 @@ var HTTP_Request_Replay = Class.extend({
 	},
 
 	"at_shutdown": function(){
-		this.output_directory		= null;
+		this.download_directory		= null;
 		this.debug					= null;
 	}
 
@@ -1013,70 +1004,88 @@ var HTTP_Request_Replay_wget = HTTP_Request_Replay.extend({
 		}
 	},
 
-	"replay_request": function(id, do_startup, do_shutdown){
+	"replay_request_id": function(id){
 		var self = this;
 		var callback;
 
-		if (do_startup) self.at_startup();
+		self.debug() && self.debug('(replay_request_id|checkpoint|1): ' + 'beginning sanity checks..');
 
 		// validate file/directory handles
-		if (! helper_functions.is_file_handle_usable(self.output_directory, ['isDirectory','isReadable','isWritable'])){return;}
+		if (! helper_functions.is_file_handle_usable(self.download_directory, ['isDirectory','isReadable','isWritable'])){return;}
 		if (! helper_functions.is_file_handle_usable(self.wget_executable,  ['isFile','isExecutable'])){return;}
 
+		self.debug() && self.debug('(replay_request_id|checkpoint|2): ' + 'file handles are OK..');
+
 		callback = function(request){
-			if (
-				(! request) ||
-				(! request.url)
-			){return;}
-
-			var wget_options, command_line_args, header_name, header_value;
-
-			var push_args = function(args){
-				for (var i=0; i<args.length; i++){
-					command_line_args.push(args[i]);
-				}
-			};
-
-			wget_options			= self.prefs.getCharPref('run.wget.options');
-			command_line_args		= wget_options.split(/\s+/);
-
-			/* --------------------------------------
-			 * reference:
-			 *     http://www.gnu.org/software/wget/manual/wget.html
-			 * topic:
-			 *     https://forums.mozilla.org/viewtopic.php?t=9784&p=20984
-			 * important takeaways:
-			 *   - switch and value are separate array elements
-			 *   - do NOT wrap long filepaths in quotes
-			 * --------------------------------------
-			 */
-
-			// output directory
-			push_args([ '-P', (self.output_directory.path) ]);
-
-			// HTTP request headers
-			if (request.headers){
-				for (header_name in request.headers){
-					header_value	= request.headers[header_name];
-
-					push_args([ '--header', (header_name + ': ' + header_value) ]);
-				}
-			}
-
-			// POST message body
-			if (request.post_data){
-				push_args([ '--method', 'POST' ]);
-				push_args([ '--post-data', (request.post_data) ]);
-			}
-
-			// URL
-			push_args([ (request.url) ]);
-
-			self.run_process(self.wget_executable, command_line_args);
-
-			if (do_shutdown) self.at_shutdown();
+			self.replay_request(request);
 		};
 		self.request_persistence.get_saved_request(id, callback);
+	},
+
+	"replay_request": function(request){
+		var self = this;
+
+		self.debug() && self.debug('(replay_request|checkpoint|1): ' + 'beginning sanity checks..');
+
+		// validate file/directory handles
+		if (! helper_functions.is_file_handle_usable(self.download_directory, ['isDirectory','isReadable','isWritable'])){return;}
+		if (! helper_functions.is_file_handle_usable(self.wget_executable,  ['isFile','isExecutable'])){return;}
+
+		self.debug() && self.debug('(replay_request|checkpoint|2): ' + 'file handles are OK..');
+
+		if (
+			(! request) ||
+			(! request.url)
+		){return;}
+
+		self.debug() && self.debug('(replay_request|checkpoint|3): ' + 'HTTP request is OK..');
+
+		var wget_options, command_line_args, header_name, header_value;
+
+		var push_args = function(args){
+			for (var i=0; i<args.length; i++){
+				command_line_args.push(args[i]);
+			}
+		};
+
+		wget_options			= self.prefs.getCharPref('run.wget.options');
+		command_line_args		= wget_options.split(/\s+/);
+
+		/* --------------------------------------
+		 * reference:
+		 *     http://www.gnu.org/software/wget/manual/wget.html
+		 * topic:
+		 *     https://forums.mozilla.org/viewtopic.php?t=9784&p=20984
+		 * important takeaways:
+		 *   - switch and value are separate array elements
+		 *   - do NOT wrap long filepaths in quotes
+		 * --------------------------------------
+		 */
+
+		// output directory
+		push_args([ '-P', (self.download_directory.path) ]);
+
+		// HTTP request headers
+		if (request.headers){
+			for (header_name in request.headers){
+				header_value	= request.headers[header_name];
+
+				push_args([ '--header', (header_name + ': ' + header_value) ]);
+			}
+		}
+
+		// POST message body
+		if (request.post_data){
+			push_args([ '--method', 'POST' ]);
+			push_args([ '--post-data', (request.post_data) ]);
+		}
+
+		// URL
+		push_args([ (request.url) ]);
+
+		self.debug() && self.debug('(replay_request|checkpoint|4): ' + 'spawning process => "' + self.wget_executable.path + '" "' + command_line_args.join('" "') + '"');
+
+		self.run_process(self.wget_executable, command_line_args);
 	},
 
 	"at_shutdown": function(){
@@ -1743,78 +1752,6 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 				post_rule_callback = function(updated_headers){
 					if (self.sandbox.request && self.sandbox.request.headers){
 						self.sandbox.request.headers.updated = updated_headers;
-					}
-				};
-			}
-
-			// activate RESTful API?
-			if (
-				(self.request_persistence.is_enabled()) &&
-				(self.request_persistence.is_RESTful_API_enabled())
-			){
-				if (! self.has_functions){
-					// add the minimal necessary contextual variables
-					self.sandbox.request = {
-						"uri": {
-							"href": url
-						}
-					};
-				}
-
-				self.sandbox.print = function(format, user_callback){
-					if (
-						(! format) ||
-						(typeof format !== 'string')
-					){return;}
-
-					switch (format.toLowerCase()){
-						case 'wget':
-							(function(){
-								var callback;
-
-								callback = function(requests){
-									var html, i, request;
-									html = '<html><body><ul>';
-									if (requests){
-										for (i=0; i<requests.length; i++){
-											request = requests[i];
-											html += '<li><a href="moz-rewrite:/run/wget/' + request.id + '">' + request.url + '</a></li>';
-										}
-									}
-									html += '</ul></body></html>';
-									user_callback(html);
-								};
-								self.request_persistence.get_saved_requests(callback);
-							})();
-							break;
-
-						case 'curl':
-							// not yet implemented
-						default:
-							break;
-					}
-				};
-
-				self.sandbox.run = function(format, id){
-					if (
-						(! format) ||
-						(typeof format !== 'string')
-					){return;}
-
-					switch (format.toLowerCase()){
-						case 'wget':
-							(function(){
-								var replay;
-
-								replay = new HTTP_Request_Replay_wget( self.request_persistence );
-								replay.replay_request(id, true, true);
-							})();
-							break;
-
-						case 'curl':
-							// not yet implemented
-						default:
-							break;
 					}
 				};
 			}
