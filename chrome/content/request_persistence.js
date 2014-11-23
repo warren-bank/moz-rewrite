@@ -151,6 +151,16 @@ var moz_rewrite_request_persistence_dialog = {
 						replayer					= self.replayer_cache[type];
 					}
 					break;
+
+				case 'curl':
+					Components.utils.import("resource://Moz-Rewrite/HTTP_Request_Replay_curl.js");
+					if (typeof HTTP_Request_Replay_curl === 'function'){
+						self.replayer_cache[type]	= new HTTP_Request_Replay_curl( self.request_persistence );
+						self.replayer_cache[type].at_startup();
+						replayer					= self.replayer_cache[type];
+					}
+					break;
+
 				default:
 					break;
 			}

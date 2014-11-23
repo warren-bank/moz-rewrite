@@ -5,6 +5,7 @@
 <!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.request_persistence.save_file "moz-rewrite: output file for saved HTTP Requests">
 <!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.request_persistence.download_directory "moz-rewrite: download directory for replayed HTTP Requests">
 <!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.request_persistence.wget_exe "moz-rewrite: \'wget\' executable for replaying HTTP Requests">
+<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.request_persistence.curl_exe "moz-rewrite: \'curl\' executable for replaying HTTP Requests">
 
 <!ENTITY prefwindow.Moz_Rewrite.tab.input "input: rules data">
 <!ENTITY prefwindow.Moz_Rewrite.tab.output "output: save()">
@@ -16,6 +17,7 @@
 
 <!ENTITY prefwindow.Moz_Rewrite.subheading.request_persistence.replay.general "common settings">
 <!ENTITY prefwindow.Moz_Rewrite.subheading.request_persistence.replay.wget "wget">
+<!ENTITY prefwindow.Moz_Rewrite.subheading.request_persistence.replay.curl "curl">
 
 <!ENTITY prefwindow.Moz_Rewrite.label.request.enabled "Enabled">
 <!ENTITY prefwindow.Moz_Rewrite.label.request.rules_file.path "Path to Rules File">
@@ -36,3 +38,6 @@
 <!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.replay.run.wget.executable_file.path "Path to 'wget' executable">
 <!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.replay.run.wget.executable_file.find_button "Find">
 <!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.replay.run.wget.options "Command-Line Options for 'wget' executable">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.replay.run.curl.executable_file.path "Path to 'curl' executable">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.replay.run.curl.executable_file.find_button "Find">
+<!ENTITY prefwindow.Moz_Rewrite.label.request_persistence.replay.run.curl.options "Command-Line Options for 'curl' executable">

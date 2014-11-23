@@ -24,6 +24,7 @@
 			<button type="menu" label="&window.Moz_Rewrite.request_persistence.label.replay_options_button;..  " flex="0">
 				<menupopup>
 					<menuitem label="wget" value="wget" oncommand="moz_rewrite_request_persistence_dialog.on_replay(this.value)" />
+					<menuitem label="curl" value="curl" oncommand="moz_rewrite_request_persistence_dialog.on_replay(this.value)" />
 				</menupopup>
 			</button>
 			<spacer flex="1"/>

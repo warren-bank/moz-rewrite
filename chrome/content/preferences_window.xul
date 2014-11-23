@@ -32,6 +32,8 @@
 			<preference id="replay_download_directory"           name="extensions.Moz-Rewrite.request_persistence.replay.download_directory.path"        type="string"/>
 			<preference id="replay_wget_exe"                     name="extensions.Moz-Rewrite.request_persistence.replay.run.wget.executable_file.path"  type="string"/>
 			<preference id="replay_wget_options"                 name="extensions.Moz-Rewrite.request_persistence.replay.run.wget.options"               type="string"/>
+			<preference id="replay_curl_exe"                     name="extensions.Moz-Rewrite.request_persistence.replay.run.curl.executable_file.path"  type="string"/>
+			<preference id="replay_curl_options"                 name="extensions.Moz-Rewrite.request_persistence.replay.run.curl.options"               type="string"/>
 		</preferences>
 
 		<tabbox>
@@ -138,6 +140,20 @@
 		<label value="&prefwindow.Moz_Rewrite.label.request_persistence.replay.run.wget.options;: "/>
 		<textbox preference="replay_wget_options" multiline="false" newlines="stripsurroundingwhitespace" placeholder="-c -nd --content-disposition --no-http-keep-alive --no-check-certificate -e robots=off" flex="1"/>
 	</groupbox><!-- wget -->
+
+	<groupbox orient="vertical">
+		<caption label="&prefwindow.Moz_Rewrite.subheading.request_persistence.replay.curl;"/>
+
+		<label value="&prefwindow.Moz_Rewrite.label.request_persistence.replay.run.curl.executable_file.path;: "/>
+		<hbox>
+			<textbox preference="replay_curl_exe" id="replay_curl_exe_element" multiline="false" newlines="stripsurroundingwhitespace" placeholder="/path/to/curl" flex="1"/>
+			<button label="&prefwindow.Moz_Rewrite.label.request_persistence.replay.run.curl.executable_file.find_button;.." oncommand="prefwindow.open_file_find_dialog('replay_curl_exe_element', '&prefwindow.Moz_Rewrite.title.dialog_window.request_persistence.curl_exe;',['filterApps']);"/>
+		</hbox>
+
+		<separator class="thin"/>
+		<label value="&prefwindow.Moz_Rewrite.label.request_persistence.replay.run.curl.options;: "/>
+		<textbox preference="replay_curl_options" multiline="false" newlines="stripsurroundingwhitespace" placeholder="-q -C - --globoff --insecure --no-keepalive --no-sessionid --location --location-trusted --max-redirs 5" flex="1"/>
+	</groupbox><!-- curl -->
 </vbox>
 <!-- ========================================================================== -->
 				</tabpanel>
