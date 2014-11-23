@@ -24,7 +24,6 @@ const Cu				= Components.utils;
 const Cr				= Components.results;
 
 Cu.import("resource://Moz-Rewrite/HTTP_Request_Replay.js");
-Cu.import("resource://Moz-Rewrite/helper_functions.js");
 
 var HTTP_Request_Replay_wget = HTTP_Request_Replay.extend({
 	"at_startup": function(){

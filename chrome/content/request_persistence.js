@@ -1,4 +1,4 @@
-var wget_rewrite_request_persistence_dialog = {
+var moz_rewrite_request_persistence_dialog = {
 
 /* ----------------------------------------------
 /* comment out when not testing..
@@ -11,7 +11,7 @@ var wget_rewrite_request_persistence_dialog = {
 	},
 
 	"debug_on_load": function(){
-		var self = wget_rewrite_request_persistence_dialog;
+		var self = moz_rewrite_request_persistence_dialog;
 		var parent_node = self.get_parent_node();
 
 		self.add_request({"id":11111, "url":"http://aaa.aaa/aaa?aaa=aaa&aa=aa&a=a"}, parent_node);
@@ -23,7 +23,7 @@ var wget_rewrite_request_persistence_dialog = {
 /* ---------------------------------------------- */
 
 	"load_requests": function(){
-		var self = wget_rewrite_request_persistence_dialog;
+		var self = moz_rewrite_request_persistence_dialog;
 		var request_persistence, callback;
 
 		Components.utils.import("resource://Moz-Rewrite/HTTP_Request_Persistence.js");
@@ -89,12 +89,12 @@ var wget_rewrite_request_persistence_dialog = {
 	},
 
 	"get_parent_node": function(){
-		var parent_node = document.getElementById('wget_rewrite_persistent_requests');
+		var parent_node = document.getElementById('moz_rewrite_persistent_requests');
 		return parent_node;
 	},
 
 	"get_selected_request_ids": function(){
-		var self = wget_rewrite_request_persistence_dialog;
+		var self = moz_rewrite_request_persistence_dialog;
 		var ids, parent_node, checkboxes, i, checkbox, id;
 
 		ids			= [];
@@ -104,11 +104,13 @@ var wget_rewrite_request_persistence_dialog = {
 		if (checkboxes && checkboxes.length){
 			for (i=0; i<checkboxes.length; i++){
 				checkbox	= checkboxes[i];
-				id			= checkbox.getAttribute('id');
-				if (id){
-					id		= parseInt(id, 10);
-					if (! isNaN(id)){
-						ids.push(id);
+				if (checkbox.checked){
+					id		= checkbox.getAttribute('id');
+					if (id){
+						id	= parseInt(id, 10);
+						if (! isNaN(id)){
+							ids.push(id);
+						}
 					}
 				}
 			}
@@ -117,7 +119,7 @@ var wget_rewrite_request_persistence_dialog = {
 	},
 
 	"get_replayer": function(type){
-		var self = wget_rewrite_request_persistence_dialog;
+		var self = moz_rewrite_request_persistence_dialog;
 		var replayer;
 
 		replayer = null;
@@ -158,7 +160,7 @@ var wget_rewrite_request_persistence_dialog = {
 	},
 
 	"find_request_by_id": function(id){
-		var self = wget_rewrite_request_persistence_dialog;
+		var self = moz_rewrite_request_persistence_dialog;
 		var request, i;
 
 		request = null;
@@ -174,7 +176,7 @@ var wget_rewrite_request_persistence_dialog = {
 	},
 
 	"on_load": function(){
-		var self = wget_rewrite_request_persistence_dialog;
+		var self = moz_rewrite_request_persistence_dialog;
 
 		self.debug && self.debug('dialog is loaded..');
 		self.debug_on_load && self.debug_on_load();
@@ -183,7 +185,7 @@ var wget_rewrite_request_persistence_dialog = {
 	},
 
 	"on_replay": function(type){
-		var self = wget_rewrite_request_persistence_dialog;
+		var self = moz_rewrite_request_persistence_dialog;
 
 		self.debug && self.debug('starting replay using: "' + type + '"');
 
@@ -205,7 +207,7 @@ var wget_rewrite_request_persistence_dialog = {
 	},
 
 	"on_unload": function(){
-		var self = wget_rewrite_request_persistence_dialog;
+		var self = moz_rewrite_request_persistence_dialog;
 
 		self.debug && self.debug('dialog is closing..');
 
@@ -221,5 +223,5 @@ var wget_rewrite_request_persistence_dialog = {
 
 };
 
-window.addEventListener("load",   wget_rewrite_request_persistence_dialog.on_load,   false);
-window.addEventListener("unload", wget_rewrite_request_persistence_dialog.on_unload, false);
+window.addEventListener("load",   moz_rewrite_request_persistence_dialog.on_load,   false);
+window.addEventListener("unload", moz_rewrite_request_persistence_dialog.on_unload, false);
