@@ -136,7 +136,7 @@
 
 		<separator class="thin"/>
 		<label value="&prefwindow.Moz_Rewrite.label.request_persistence.replay.run.wget.options;: "/>
-		<textbox preference="replay_wget_options" multiline="false" newlines="stripsurroundingwhitespace" placeholder="-c -nd --content-disposition --no-http-keep-alive --no-check-certificate -e robots=off" flex="1"/>
+		<textbox preference="replay_wget_options" multiline="false" newlines="stripsurroundingwhitespace" placeholder="-c -nd --content-disposition --no-http-keep-alive --no-check-certificate -e robots=off --progress=dot:binary" flex="1"/>
 	</groupbox><!-- wget -->
 </vbox>
 <!-- ========================================================================== -->
