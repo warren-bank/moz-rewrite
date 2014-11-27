@@ -42,13 +42,13 @@ var HTTP_Request_Replay_wget = HTTP_Request_Replay.extend({
 		}
 	},
 
-	"replay_request": function(request){
+	"replay_request": function(request, download_file){
 		var self = this;
 
 		self.debug() && self.debug('(replay_request|checkpoint|1): ' + 'beginning sanity checks..');
 
 		// validate file/directory handles
-		if (! self.validate_file_handles()){return;}
+		if (! self.validate_file_handles(download_file)){return;}
 
 		self.debug() && self.debug('(replay_request|checkpoint|2): ' + 'file handles are OK..');
 
@@ -84,8 +84,14 @@ var HTTP_Request_Replay_wget = HTTP_Request_Replay.extend({
 		 * --------------------------------------
 		 */
 
-		// output directory
-		push_args([ '-P', (self.download_directory.path) ]);
+		if (download_file){
+			// output filepath
+			push_args([ '-O', (download_file.path) ]);
+		}
+		else {
+			// output directory
+			push_args([ '-P', (self.download_directory.path) ]);
+		}
 
 		// HTTP request headers
 		if (request.headers){

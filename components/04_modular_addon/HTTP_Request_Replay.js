@@ -68,16 +68,23 @@ var HTTP_Request_Replay = Class.extend({
 		return helper_functions.get_file_from_preference(pref_path, self.prefs, self.log, self.debug);
 	},
 
-	"validate_file_handles": function(){
+	"validate_file_handles": function(download_file){
 		var self = this;
 
 		return (
-			(helper_functions.is_file_handle_usable(self.download_directory, ['isDirectory','isReadable','isWritable'])) &&
-			(helper_functions.is_file_handle_usable(self.binary_executable,  ['isFile','isExecutable']))
+			(download_file) ?
+			(
+				(helper_functions.is_file_handle_usable(download_file,           ['isFile','isReadable','isWritable'])) &&
+				(helper_functions.is_file_handle_usable(self.binary_executable,  ['isFile','isExecutable']))
+			) :
+			(
+				(helper_functions.is_file_handle_usable(self.download_directory, ['isDirectory','isReadable','isWritable'])) &&
+				(helper_functions.is_file_handle_usable(self.binary_executable,  ['isFile','isExecutable']))
+			)
 		);
 	},
 
-	"replay_request_id": function(id){
+	"replay_request_id": function(id, download_file){
 		/* --------------------------------------
 		 * since there's no way to capture stdout,
 		 * the method signature does NOT include a `user_callback` function.
@@ -89,17 +96,17 @@ var HTTP_Request_Replay = Class.extend({
 		self.debug() && self.debug('(replay_request_id|checkpoint|1): ' + 'beginning sanity checks..');
 
 		// validate file/directory handles
-		if (! self.validate_file_handles()){return;}
+		if (! self.validate_file_handles(download_file)){return;}
 
 		self.debug() && self.debug('(replay_request_id|checkpoint|2): ' + 'file handles are OK..');
 
 		callback = function(request){
-			self.replay_request(request);
+			self.replay_request(request, download_file);
 		};
 		self.request_persistence.get_saved_request(id, callback);
 	},
 
-	"replay_request": function(request){
+	"replay_request": function(request, download_file){
 		// abstract function
 
 		/* --------------------------------------

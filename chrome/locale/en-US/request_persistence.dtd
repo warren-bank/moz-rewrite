@@ -1,5 +1,7 @@
 <!ENTITY window.Moz_Rewrite.request_persistence.title.window "moz-rewrite: view/replay saved requests">
+<!ENTITY window.Moz_Rewrite.request_persistence.title.dialog_window.download_file "partial file download for URL: ">
 
 <!ENTITY window.Moz_Rewrite.request_persistence.heading.saved_requests "saved HTTP Requests">
 
 <!ENTITY window.Moz_Rewrite.request_persistence.label.replay_options_button "replay selected requests using">
+<!ENTITY window.Moz_Rewrite.request_persistence.label.interactive_mode "interactively identify each partial/incomplete download file">

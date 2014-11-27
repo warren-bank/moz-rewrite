@@ -26,6 +26,7 @@
 					<menuitem label="wget" value="wget" oncommand="moz_rewrite_request_persistence_dialog.on_replay(this.value)" />
 				</menupopup>
 			</button>
+			<checkbox id="moz_rewrite_interactive_mode" checked="true" label="&window.Moz_Rewrite.request_persistence.label.interactive_mode;" dialog_title_prefix="&window.Moz_Rewrite.request_persistence.title.dialog_window.download_file;" />
 			<spacer flex="1"/>
 		</hbox>
 	</vbox>

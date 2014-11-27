@@ -50,9 +50,10 @@ var moz_rewrite_request_persistence_dialog = {
 
 	"add_request": function(request, parent_node){
 		const XUL_NS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
-		var child_node, label;
+		var self = moz_rewrite_request_persistence_dialog;
+		var label, child_node;
 
-		label = (request.url.length > 150)? (request.url.substring(0,148) + '..') : request.url;
+		label = self.get_truncated_request_url(request, 150);
 
 		child_node = document.createElementNS(XUL_NS, 'checkbox');
 		child_node.setAttribute('checked', 'false');
@@ -118,6 +119,16 @@ var moz_rewrite_request_persistence_dialog = {
 		return ids;
 	},
 
+	"get_interactive_mode": function(){
+		var checkbox, result, dialog_title_prefix;
+
+		checkbox			= document.getElementById('moz_rewrite_interactive_mode');
+		result				= (!! checkbox.checked);
+		dialog_title_prefix	= (result) ? (checkbox.getAttribute('dialog_title_prefix')) : null;
+
+		return [result, dialog_title_prefix];
+	},
+
 	"get_replayer": function(type){
 		var self = moz_rewrite_request_persistence_dialog;
 		var replayer;
@@ -159,6 +170,12 @@ var moz_rewrite_request_persistence_dialog = {
 		return replayer;
 	},
 
+	"get_truncated_request_url": function(request, max_length){
+		return (
+			(request.url.length > max_length)? (request.url.substring(0, (max_length-2)) + '..') : request.url
+		);
+	},
+
 	"find_request_by_id": function(id){
 		var self = moz_rewrite_request_persistence_dialog;
 		var request, i;
@@ -175,6 +192,21 @@ var moz_rewrite_request_persistence_dialog = {
 		return request;
 	},
 
+	"find_download_file": function(dialog_title){
+		var fpClass, file_picker, result, download_file;
+
+		fpClass				= Components.interfaces.nsIFilePicker;
+		file_picker			= Components.classes["@mozilla.org/filepicker;1"].createInstance(fpClass);
+		file_picker.init(window, dialog_title, fpClass.modeOpen);
+
+		result				= file_picker.show();
+		if (result !== fpClass.returnCancel){
+			download_file	= file_picker.file;
+		}
+
+		return download_file;
+	},
+
 	"on_load": function(){
 		var self = moz_rewrite_request_persistence_dialog;
 
@@ -189,10 +221,14 @@ var moz_rewrite_request_persistence_dialog = {
 
 		self.debug && self.debug('starting replay using: "' + type + '"');
 
-		var selected_request_ids, replayer, i, id, request;
+		var selected_request_ids, interactive_mode, dialog_title_prefix, replayer, i, id, request, download_file, dialog_title;
 
 		selected_request_ids	= self.get_selected_request_ids();
 		if (! selected_request_ids){return;}
+
+		interactive_mode		= self.get_interactive_mode();
+		dialog_title_prefix		= interactive_mode[1];
+		interactive_mode		= interactive_mode[0];
 
 		replayer				= self.get_replayer(type);
 		if (! replayer){return;}
@@ -201,7 +237,14 @@ var moz_rewrite_request_persistence_dialog = {
 			id					= selected_request_ids[i];
 			request				= self.find_request_by_id(id);
 			if (request){
-				replayer.replay_request(request);
+				download_file	= null;
+
+				if (interactive_mode){
+					dialog_title	= dialog_title_prefix + self.get_truncated_request_url(request, 70);
+					download_file	= self.find_download_file(dialog_title);
+				}
+
+				replayer.replay_request(request, download_file);
 			}
 		}
 	},
