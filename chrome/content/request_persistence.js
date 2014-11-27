@@ -120,13 +120,19 @@ var moz_rewrite_request_persistence_dialog = {
 	},
 
 	"get_interactive_mode": function(){
-		var checkbox, result, dialog_title_prefix;
+		var checkbox, interactive_mode, dialog_title_prefix, fallback_to_default_directory;
 
-		checkbox			= document.getElementById('moz_rewrite_interactive_mode');
-		result				= (!! checkbox.checked);
-		dialog_title_prefix	= (result) ? (checkbox.getAttribute('dialog_title_prefix')) : null;
+		checkbox							= document.getElementById('moz_rewrite_interactive_mode');
+		interactive_mode					= (!! checkbox.checked);
 
-		return [result, dialog_title_prefix];
+		if (interactive_mode){
+			dialog_title_prefix				= checkbox.getAttribute('dialog_title_prefix');
+
+			checkbox						= document.getElementById('moz_rewrite_interactive_mode_fallback_to_default_directory');
+			fallback_to_default_directory	= (!! checkbox.checked);
+		}
+
+		return [interactive_mode, dialog_title_prefix, fallback_to_default_directory];
 	},
 
 	"get_replayer": function(type){
@@ -221,27 +227,33 @@ var moz_rewrite_request_persistence_dialog = {
 
 		self.debug && self.debug('starting replay using: "' + type + '"');
 
-		var selected_request_ids, interactive_mode, dialog_title_prefix, replayer, i, id, request, download_file, dialog_title;
+		var selected_request_ids, interactive_mode, dialog_title_prefix, fallback_to_default_directory, replayer, i, id, request, download_file, dialog_title;
 
-		selected_request_ids	= self.get_selected_request_ids();
+		selected_request_ids			= self.get_selected_request_ids();
 		if (! selected_request_ids){return;}
 
-		interactive_mode		= self.get_interactive_mode();
-		dialog_title_prefix		= interactive_mode[1];
-		interactive_mode		= interactive_mode[0];
+		interactive_mode				= self.get_interactive_mode();
+		dialog_title_prefix				= interactive_mode[1];
+		fallback_to_default_directory	= interactive_mode[2];
+		interactive_mode				= interactive_mode[0];
 
-		replayer				= self.get_replayer(type);
+		replayer						= self.get_replayer(type);
 		if (! replayer){return;}
 
 		for (i=0; i<selected_request_ids.length; i++){
-			id					= selected_request_ids[i];
-			request				= self.find_request_by_id(id);
+			id							= selected_request_ids[i];
+			request						= self.find_request_by_id(id);
 			if (request){
-				download_file	= null;
+				download_file			= null;
 
 				if (interactive_mode){
-					dialog_title	= dialog_title_prefix + self.get_truncated_request_url(request, 70);
-					download_file	= self.find_download_file(dialog_title);
+					dialog_title		= dialog_title_prefix + self.get_truncated_request_url(request, 70);
+					download_file		= self.find_download_file(dialog_title);
+
+					if (
+						(! download_file) &&
+						(! fallback_to_default_directory)
+					){continue;}
 				}
 
 				replayer.replay_request(request, download_file);

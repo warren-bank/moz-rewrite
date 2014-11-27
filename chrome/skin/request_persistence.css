@@ -1,9 +1,38 @@
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 
 #moz_rewrite_request_persistence {
-	padding:	15px;
+	padding:		15px;
 }
 
 #moz_rewrite_request_persistence #moz_rewrite_persistent_requests > * {
-	white-space: nowrap;
+	white-space:	nowrap;
+}
+
+#moz_rewrite_request_persistence #moz_rewrite_control_elements > button {
+	height:			auto;
+}
+#moz_rewrite_request_persistence #moz_rewrite_control_elements checkbox,
+#moz_rewrite_request_persistence #moz_rewrite_control_elements .checkbox-spacer-box,
+#moz_rewrite_request_persistence #moz_rewrite_control_elements .checkbox-check,
+#moz_rewrite_request_persistence #moz_rewrite_control_elements .checkbox-label-center-box,
+#moz_rewrite_request_persistence #moz_rewrite_control_elements .checkbox-label-box,
+#moz_rewrite_request_persistence #moz_rewrite_control_elements .checkbox-icon,
+#moz_rewrite_request_persistence #moz_rewrite_control_elements .checkbox-label,
+#moz_rewrite_request_persistence #moz_rewrite_control_elements label {
+	margin:			0px;
+	padding:		0px;
+}
+#moz_rewrite_request_persistence #moz_rewrite_control_elements .checkbox-label,
+#moz_rewrite_request_persistence #moz_rewrite_control_elements label {
+	padding-left:	6px;
+}
+#moz_rewrite_request_persistence #moz_rewrite_control_elements label + label {
+	padding-top:	6px;
+}
+#moz_rewrite_request_persistence #moz_rewrite_control_elements checkbox#moz_rewrite_interactive_mode {
+	margin-bottom:	10px;
+}
+#moz_rewrite_request_persistence #moz_rewrite_control_elements checkbox#moz_rewrite_interactive_mode_fallback_to_default_directory .checkbox-label {
+	padding-left:	0px;
+	display:		none;
 }

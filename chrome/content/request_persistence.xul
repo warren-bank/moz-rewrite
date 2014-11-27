@@ -9,7 +9,7 @@
 
 	<script type="application/x-javascript" src="chrome://Moz-Rewrite/content/request_persistence.js"/>
 
-	<vbox>
+	<vbox align="start">
 		<groupbox id="moz_rewrite_persistent_requests">
 			<caption label="&window.Moz_Rewrite.request_persistence.heading.saved_requests;"/>
 
@@ -20,13 +20,23 @@
 
 		<separator class="thin"/>
 
-		<hbox>
+		<hbox align="start" id="moz_rewrite_control_elements">
 			<button type="menu" label="&window.Moz_Rewrite.request_persistence.label.replay_options_button;..  " flex="0">
 				<menupopup>
 					<menuitem label="wget" value="wget" oncommand="moz_rewrite_request_persistence_dialog.on_replay(this.value)" />
 				</menupopup>
 			</button>
-			<checkbox id="moz_rewrite_interactive_mode" checked="true" label="&window.Moz_Rewrite.request_persistence.label.interactive_mode;" dialog_title_prefix="&window.Moz_Rewrite.request_persistence.title.dialog_window.download_file;" />
+			<vbox align="start">
+				<checkbox id="moz_rewrite_interactive_mode" checked="true" persist="checked" label="&window.Moz_Rewrite.request_persistence.label.interactive_mode;" dialog_title_prefix="&window.Moz_Rewrite.request_persistence.title.dialog_window.download_file;" />
+				<hbox align="start">
+					<checkbox id="moz_rewrite_interactive_mode_fallback_to_default_directory" checked="false" persist="checked" />
+					<vbox align="start">
+						<label value="&window.Moz_Rewrite.request_persistence.label.interactive_mode.fallback_to_default_directory.heading;" />
+						<label value="  &#8226; &window.Moz_Rewrite.request_persistence.label.interactive_mode.fallback_to_default_directory.checked;" />
+						<label value="  &#8226; &window.Moz_Rewrite.request_persistence.label.interactive_mode.fallback_to_default_directory.unchecked;" />
+					</vbox>
+				</hbox>
+			</vbox>
 			<spacer flex="1"/>
 		</hbox>
 	</vbox>

@@ -5,3 +5,6 @@
 
 <!ENTITY window.Moz_Rewrite.request_persistence.label.replay_options_button "replay selected requests using">
 <!ENTITY window.Moz_Rewrite.request_persistence.label.interactive_mode "interactively identify each partial/incomplete download file">
+<!ENTITY window.Moz_Rewrite.request_persistence.label.interactive_mode.fallback_to_default_directory.heading   "fallback behavior when 'cancel' is chosen in interactive dialog:">
+<!ENTITY window.Moz_Rewrite.request_persistence.label.interactive_mode.fallback_to_default_directory.checked   "checked = proceed with download and save to default directory">
+<!ENTITY window.Moz_Rewrite.request_persistence.label.interactive_mode.fallback_to_default_directory.unchecked "unchecked = skip replay of the specific saved request">
