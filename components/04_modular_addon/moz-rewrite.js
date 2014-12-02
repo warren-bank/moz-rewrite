@@ -129,6 +129,8 @@ Moz_Rewrite.prototype = {
 				break;
 
 			case 'http-on-examine-response':
+			case 'http-on-examine-cached-response':
+			case 'http-on-examine-merged-response':
 				(function(){
 					try {
 						var httpChannel = subject.QueryInterface(Ci.nsIHttpChannel);
@@ -159,6 +161,10 @@ Moz_Rewrite.prototype = {
 			if (self.prefs.getBoolPref("response.enabled")){
 				OS.addObserver(self, "http-on-examine-response", false);
 				self.observers.push("http-on-examine-response");
+				OS.addObserver(self, "http-on-examine-cached-response", false);
+				self.observers.push("http-on-examine-cached-response");
+				OS.addObserver(self, "http-on-examine-merged-response", false);
+				self.observers.push("http-on-examine-merged-response");
 				self.HTTP_Response_Stream.at_startup();
 				self.HTTP_Response_Stream.set_case_sensitivity( self.prefs.getBoolPref("case_sensitive") );
 				initialize_common_objects = true;
