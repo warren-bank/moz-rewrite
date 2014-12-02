@@ -1445,14 +1445,18 @@ var HTTP_Stream = Class.extend({
 		var request_data;
 
 		try {
-			request_data				= {};
-			request_data.original_uri	= self.get_uri_components(httpChannel.originalURI);
-			request_data.uri			= self.get_uri_components(httpChannel.URI);
-			request_data.referrer		= self.get_uri_components(httpChannel.referrer);
-			request_data.method			= httpChannel.requestMethod;
-			request_data.headers		= {
-				"unmodified"			: self.get_HTTP_headers(httpChannel, false),
-				"updated"				: {}
+			request_data					= {};
+			request_data.window_location	= self.get_window_components();
+			request_data.original_uri		= self.get_uri_components(httpChannel.originalURI);
+			request_data.uri				= self.get_uri_components(httpChannel.URI);
+			request_data.referrer			= self.get_uri_components(httpChannel.referrer);
+			if (! request_data.referrer){
+				request_data.referrer		= request_data.window_location;
+			}
+			request_data.method				= httpChannel.requestMethod;
+			request_data.headers			= {
+				"unmodified"				: self.get_HTTP_headers(httpChannel, false),
+				"updated"					: {}
 			};
 		}
 		catch(e){
@@ -1461,6 +1465,68 @@ var HTTP_Stream = Class.extend({
 		}
 		finally {
 			return request_data;
+		}
+	},
+
+	"get_window_components": function(){
+		var self = this;
+		var wm, win, location, components;
+
+		var lc = function(str){
+			if (typeof str !== 'string'){return '';}
+			else if (str === ''){return '';}
+			else if (self.is_case_sensitive) {return str;}
+			else {return str.toLowerCase();}
+		};
+
+		try {
+			// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIWindowMediator#getMostRecentWindow()
+			// https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIDOMWindow
+			// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIDOMWindowInternal
+			// https://developer.mozilla.org/en-US/docs/XPCOM_Interface_Reference/nsIDOMLocation
+			// http://dxr.mozilla.org/mozilla-central/source/dom/interfaces/base/nsIDOMLocation.idl
+			// https://developer.mozilla.org/en-US/docs/Web/API/Location
+
+			wm					= Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
+			win					= wm.getMostRecentWindow(null);
+			location			= win.content.location;
+
+			components			= {
+				"href"			: lc(location.href),
+				"protocol"		: lc(location.protocol),
+				"username"		: lc(location.username),
+				"password"		: lc(location.password),
+				"host"			: lc(location.host),
+				"port"			: lc(location.port),
+				"path"			: lc(location.pathname),
+				"query"			: lc(location.search),
+				"hash"			: lc(location.hash),
+				"file_ext"		: ''
+			};
+
+			// determine file extension
+			(function(){
+				var pieces, last_piece;
+
+				pieces			= components.path.split('/');
+				if (! pieces.length){return;}
+
+				last_piece		= pieces.pop();
+				// empty string when last character in path is: '/'
+				if (! last_piece){return;}
+
+				pieces			= last_piece.split('.');
+				if (pieces.length < 2){return;}
+
+				last_piece		= pieces.pop();
+				components["file_ext"] = last_piece;
+			})();
+		}
+		catch(e){
+			self.log('(get_window_components|error): ' + e.message);
+		}
+		finally {
+			return components;
 		}
 	},
 

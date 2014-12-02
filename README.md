@@ -39,7 +39,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 ## Contextual Variables <sub>(in scope when functions are called)</sub>
 
   * _both requests and responses_
-    * `request.original_uri` = {}<br>
+    * `request.window_location` = {}<br>
       keys:
       * `href`: [string] full URI
       * `protocol`: [string] examples: [`http:`,`https:`,`file:`]
@@ -53,10 +53,13 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
       * `file_ext`: [string]
     * `request.uri` = {}
 
-        >  <sub>same keys as: `request.original_uri`</sub>
+        >  <sub>same keys as: `request.window_location`</sub>
+    * `request.original_uri` = {}
+
+        >  <sub>same keys as: `request.window_location`</sub>
     * `request.referrer` = {}
 
-        >  <sub>same keys as: `request.original_uri`</sub>
+        >  <sub>same keys as: `request.window_location`</sub>
     * `request.method` [string]
     * `request.headers` = {}
     * `request.headers.unmodified` = {}<br>
