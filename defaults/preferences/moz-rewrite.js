@@ -1,4 +1,5 @@
 pref("extensions.Moz-Rewrite.debug",false);
+pref("extensions.Moz-Rewrite.case_sensitive",false);
 
 pref("extensions.Moz-Rewrite.request.enabled",true);
 pref("extensions.Moz-Rewrite.request.rules_file.path","");

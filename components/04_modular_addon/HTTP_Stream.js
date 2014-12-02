@@ -32,13 +32,14 @@ var HTTP_Stream = Class.extend({
 	"init": function(request_persistence, auto_init){
 		this.prefs					= helper_functions.get_prefs( (this.type + '.') );
 		this.log					= helper_functions.wrap_console_log(('HTTP_' + this.type + '_stream: '), false);
+		this.request_persistence	= request_persistence;		// dynamically injected by Moz_Rewrite
+		this.sandbox				= null;						// abstract: Shared_Sandbox
 		this.rules_file				= null;
 		this.rules_data				= null;
 		this.has_functions			= false;
 		this.watch_timer			= null;
 		this.debug					= null;
-		this.sandbox				= null;						// abstract: Shared_Sandbox
-		this.request_persistence	= request_persistence;		// dynamically injected by Moz_Rewrite
+		this.is_case_sensitive		= null;
 
 		if (auto_init){
 			this.at_startup();
@@ -88,6 +89,10 @@ var HTTP_Stream = Class.extend({
 		catch(e){
 			self.log('(at_startup|error): ' + e.message);
 		}
+	},
+
+	"set_case_sensitivity": function(case_sensitive){
+		this.is_case_sensitive = case_sensitive;
 	},
 
 	"is_enabled": function(){
@@ -386,24 +391,31 @@ var HTTP_Stream = Class.extend({
 		var self = this;
 		var components, url;
 
+		var lc = function(str){
+			if (typeof str !== 'string'){return '';}
+			else if (str === ''){return '';}
+			else if (self.is_case_sensitive) {return str;}
+			else {return str.toLowerCase();}
+		};
+
 		try {
 			components			= {
-				"href"			: (uri.spec),
-				"protocol"		: (uri.scheme + ':'),
-				"username"		: (uri.username),
-				"password"		: (uri.password),
-				"host"			: (uri.host),
+				"href"			: lc(uri.spec),
+				"protocol"		: lc(uri.scheme + ':'),
+				"username"		: lc(uri.username),
+				"password"		: lc(uri.password),
+				"host"			: lc(uri.host),
 				"port"			: ((uri.port == -1)? '' : ('' + uri.port)),
-				"path"			: (uri.path),
+				"path"			: lc(uri.path),
 				"query"			: '',
-				"hash"			: ((uri.ref)? ('#' + uri.ref) : ''),
+				"hash"			: lc((uri.ref)? ('#' + uri.ref) : ''),
 				"file_ext"		: ''
 			};
 
 			url					= uri.QueryInterface(Ci.nsIURL);
-			components.path		= url.filePath;
-			components.query	= url.query;
-			components.file_ext	= url.fileExtension;
+			components.path		= lc(url.filePath);
+			components.query	= lc(url.query);
+			components.file_ext	= lc(url.fileExtension);
 		}
 		catch(e){
 			self.log('(get_uri_components|url|error): ' + 'uri is not a valid url: ' + uri.asciiSpec);
@@ -435,7 +447,10 @@ var HTTP_Stream = Class.extend({
 						(header_value === '')
 					){return;}
 
-					this.headers[ header_key.toLowerCase() ] = header_value;
+//					if (! self.is_case_sensitive){
+						header_key = header_key.toLowerCase();
+//					}
+					this.headers[ header_key ] = header_value;
 				}
 			};
 			the_visitor = new visitor();
@@ -489,6 +504,10 @@ var HTTP_Stream = Class.extend({
 
 		// sanity check: is there any work to do?
 		if (! self.rules_data){return;}
+
+		if (! self.is_case_sensitive){
+			url = url.toLowerCase();
+		}
 
 		var run_function = function(f){
 			// sanity check
@@ -571,7 +590,10 @@ var HTTP_Stream = Class.extend({
 					}
 
 					// header value is valid
-					updated_headers[ header_key.toLowerCase() ] = local_header_value;
+//					if (! self.is_case_sensitive){
+						header_key = header_key.toLowerCase();
+//					}
+					updated_headers[ header_key ] = local_header_value;
 
 					// call callback function now, or wait until all headers in the current rule are processed?
 					// I vote for now..
