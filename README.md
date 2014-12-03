@@ -8,10 +8,15 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 * a distinct set of rules are written for each:
   * (outbound) requests
   * (inbound) responses
+* all data sets use file-based persistence
 * rules can:
   * add/edit/remove HTTP headers
   * cancel the request
   * redirect the request
+  * save a record of the request
+* saved requests can:
+  * be _replayed_ using (supported) external download tools.<br>
+    _replayed_ requests include all the HTTP headers and POST data in the original/saved request.
 
 ## Features
 
@@ -21,17 +26,29 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
   * a rule is marked as being final
 * rules are declared within a well-defined data structure.<br>
   this data isn't JSON; it is evaluated as javascript.<br>
-  as such, the following are allowed:
-  * comments
-  * regex patterns (shorthand syntax `//` or `new RegExp`)
-  * functions
-  * "immediately-invoked function expressions" (aka: "self-executing anonymous functions")
+  as such:
+  * all javascript data types are supported,<br>
+    including those that aren't representable using JSON.<br>
+    for example:
+    * comments
+    * regex patterns
+      * literal <sub>(ie: perl)</sub> notation: `//`
+      * object constructor: `new RegExp('')`
+    * functions
+  * the declaration for the data structure can contain inline code,<br>
+    which is interpolated only once during evaluation,<br>
+    immediately after the data file is initially read from disk.<br>
+    for example:
+    * storing the output of a helper function as (part of) a static value
+    * calling an "immediately-invoked function expression" (aka: "self-executing anonymous function"), and storing its output as (part of) a static value
 * where a function is present, it will be called each time the rule is evaluated.
   * rules are evaluated for every request and/or response.
   * when functions are called, there will be contextual variables as well as helper functions in scope.
   * the contextual variables will allow the function to return a value that is dependent upon the state of the request/response.
-  * the helper functions provide a library for tasks that are commonly used to generate HTTP header values.
-* where an "immediately-invoked function expression" is present, the javascript will only be evaluated once.
+  * the helper functions provide a library to perform tasks that:
+    * are commonly used to generate HTTP header values
+    * provide enhanced capabilities, unrelated to modifying HTTP header values
+* where inline javascript code is present, the javascript will only be evaluated once.
   * this occurs when the rules are read from an external file and evaluated into a javascript array of rule objects.
   * when this evaluation occurs, there is no contextual request or response.. so there are no contextual variables in scope.
   * however, the same helper functions that are always available to functions (that are defined within the rules data set) will also be available at the time that the rules data set is initialized/evaluated.
@@ -42,7 +59,11 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
     * `request.window_location` = {}<br>
       keys:
       * `href`: [string] full URI
-      * `protocol`: [string] examples: [`http:`,`https:`,`file:`]
+      * `protocol`: [string]<br>
+        for example:
+        * `http:`
+        * `https:`
+        * `file:`
       * `username`: [string]
       * `password`: [string]
       * `host`: [string]
@@ -93,30 +114,51 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
   * _always available_
     * `atob(string_base64_encoded)`<br>
       decodes a string of data which has been encoded using base-64 encoding.
+
     * `base64_decode(string_base64_encoded)`
 
         >  <sub>alias for: `atob`</sub>
+
     * `btoa(string_value)`<br>
       creates a base-64 encoded ASCII string from a "string" of binary data.
+
     * `base64_encode(string_value)`
 
         >  <sub>alias for: `btoa`</sub>
+
     * `md2(string_value)`<br>
       returns the result of hashing the input string using the `md2` crypto hash function
+
     * `md5(string_value)`<br>
       returns the result of hashing the input string using the `md5` crypto hash function
+
     * `sha1(string_value)`<br>
       returns the result of hashing the input string using the `sha1` crypto hash function
+
     * `sha256(string_value)`<br>
       returns the result of hashing the input string using the `sha256` crypto hash function
+
     * `sha384(string_value)`<br>
       returns the result of hashing the input string using the `sha384` crypto hash function
+
     * `sha512(string_value)`<br>
       returns the result of hashing the input string using the `sha512` crypto hash function
 
+  * _both requests and responses_
+    * `save()`<br>
+      prepends a record of the current request to the `Output File`.<br>
+      this record will be available for _replay_ via the ___view/replay saved requests___ dialog window.
+
   * _request only_
-    * `redirectTo(string_URI)`
-    * `cancel()`
+    * `redirectTo(string_URI)`<br>
+      hint: `window.location = string_URI`
+
+      > for an example, check out the [recipe: `redirect search engine queries from Yahoo to Google`](https://github.com/warren-bank/moz-rewrite/blob/data/recipe-book/request/redirect%20search%20engine%20queries%20from%20Yahoo%20to%20Google.js)
+
+    * `cancel()`<br>
+      completely cancels the request
+
+      > for an example, check out the [recipe: `light weight ad-blocker`](https://github.com/warren-bank/moz-rewrite/blob/data/recipe-book/request/light%20weight%20ad-blocker.js)
 
   * _response only_
 
@@ -153,142 +195,271 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 * while rules are being processed, an internal list of updates is being created and incrementally updated.
 * when the processing of rules is complete, this internal list of updates are applied to the request/response.
 
-## Examples
+## Simple Examples
 
-1. sample _response_ rules data set:
-  >
-    ```javascript
+* sample _request_ rule(s):
+
+```javascript
 [
+    /* ****************************************************
+     * all requests: add 3 custom headers
+     * ****************************************************
+     */
     {
         "url" : /^.*$/,
         "headers" : {
-            "Content-Security-Policy" : "default-src * 'self' data: mediastream:;frame-ancestors *",
-            "X-Content-Security-Policy" : null,
-            "X-Frame-Options" : null
+            "X-Custom-Sample-Header-01" : "Foo",
+            "X-Custom-Sample-Header-02" : "Bar",
+            "X-Custom-Sample-Header-03" : "Baz"
         }
     },
+    /* ****************************************************
+     * secure requests: cancel the 3 custom headers, and stop processing rules
+     * ****************************************************
+     */
     {
-        "url" : new RegExp('^(file://|https?://localhost/).*$', 'i'),
+        "url" : /^https/i,
         "headers" : {
-            "Access-Control-Allow-Origin" : "*",
-            "Access-Control-Allow-Methods" : "GET,POST"
+            "X-Custom-Sample-Header-01" : false,
+            "X-Custom-Sample-Header-02" : false,
+            "X-Custom-Sample-Header-03" : false
         },
         "stop": true
     },
+    /* ****************************************************
+     * all requests: update 1st custom header, cancel 3rd custom header
+     * ****************************************************
+     */
     {
-        "url" : new RegExp('^https?://api\\.github\\.com/.*$', 'i'),
+        "url" : /^.*$/,
         "headers" : {
-            "Content-Security-Policy" : null
-        },
-        "stop": true
-    },
-    {
-        "url" : new RegExp('^https://.*(bank|billpay|checking).*$', 'i'),
-        "headers" : {
-            "Content-Security-Policy" : false,
-            "X-Content-Security-Policy" : false,
-            "X-Frame-Options" : false,
-            "Access-Control-Allow-Origin" : false,
-            "Access-Control-Allow-Methods" : false
+            "X-Custom-Sample-Header-01" : "Hello",
+            "X-Custom-Sample-Header-03" : false
         }
     }
+    /* ****************************************************
+     * assertion #1: non-secure URL request
+     * expected result:
+     *     X-Custom-Sample-Header-01: Hello
+     *     X-Custom-Sample-Header-02: Bar
+     * ****************************************************
+     */
 ]
-    ```
+```
 
-  > #### notes:
-  > * this example is applicable to a response data specification,<br>
-      only because these particular HTTP headers are meaningful to the client (ie: browser) rather than the server.
-  > * the syntax used to declare the regex patterns is inconsistent.
-      * it uses shorthand when the pattern doesn't contain forward slash `/` characters, which would otherwise need to be escaped.
-      * however, using the `RegExp` constructor means that the pattern needs to be passed as a string;
-        and this would require that backslashes `\` be escaped.
-      * so, do whatever you find is best for you.. just make sure that your code produces a valid javascript `RegExp` object after evaluation.
-  > * usage pattern:
-      * begins by setting rules that apply global defaults
-      * then adds rules that apply special-case exceptions
-      * finishes by setting rules that apply global exceptions
+* sample _response_ rule(s):
 
-2. sample _response_ rules data set:
-  >
-    ```javascript
+```javascript
 [
+    /* ****************************************************
+     * purpose: map an applicable 'content-type' to a finite set of resources
+     *          as identified by file extension, when loaded from local hard disk.
+     * ****************************************************
+     */
     {
-        "url" : /^.*$/,
+        "url" : new RegExp('^file://', 'i'),
         "headers" : function(){
             var $headers = {};
-            if (response.headers.unmodified['content-type'] !== 'text/html'){
-                $headers = {
-                    "Content-Security-Policy" : null,
-                    "X-Content-Security-Policy" : null
-                };
+            switch( request.window_location.file_ext.toLowerCase() ){
+                case 'txt':
+                    $headers['content-type'] = 'text/plain';
+                    break;
+                case 'css':
+                    $headers['content-type'] = 'text/css';
+                    break;
+                case 'js':
+                    $headers['content-type'] = 'application/javascript';
+                    break;
+                case 'json':
+                    $headers['content-type'] = 'application/json';
+                    break;
+            }
+            if ( $headers['content-type'] ){
+                response.content_type = $headers['content-type'];
             }
             return $headers;
-        }
+        },
+        "stop": true
     }
 ]
-    ```
+```
 
-  > #### notes:
-  > * the only rule declared in this example uses a function that is called for every response.
-      * it uses the contextual variable: `response.headers`.
-      * it's important to remember that some variables are only available in certain contexts.
-        * for example, `response.headers` wouldn't make any sense in the context of processing an (outbound) HTTP request..
-          since we couldn't possibly know the answer to a question we haven't asked yet.
-        * referencing a variable that's undefined will throw an exception.
-        * this exception will be caught, and nothing bad will happen..<br>
-          however, none of your rules (in that particular data set) will be applied.
-        * since requests and responses use separate data sets, an error in one won't effect the other.
+## More Complicated Examples
+
+* a collection of various interesting rules and useful examples has been dubbed the _recipe book_
+* it can be found in its own branch of this repo, named: [_data/recipe-book_](https://github.com/warren-bank/moz-rewrite/tree/data/recipe-book)
+* users are encouraged to contribute (via push request) additional _recipe_ examples
 
 ## User Preferences
 
-  * _HTTP Requests (outbound)_:
-    * on/off toggle
+  * __input: rules data__
+    * _HTTP Requests (outbound)_:
+      * Enabled
+        > default: on
 
-      on: intercept _HTTP Requests_ and apply its corresponding set of rules<br>
-      off: disable this feature entirely
+        on/off toggle
+        * on:<br>intercept _HTTP Requests_ and apply its corresponding set of rules
+        * off:<br>disable this feature entirely
 
-      > default: on
+      * Path to Rules File
+        > default: ''
 
-    * Path to Rules File
+        >  <sub>refer to __Comments / Implementation Notes__ for advanced usage</sub>
 
-      >  <sub>refer to __Comments / Implementation Notes__ for advanced usage</sub>
+      * Watch Interval (ms, 0 to disable)
+        > default: `0` (off)
 
-      > default: ''
+        useful while writing/testing new rules.<br>
+        this feature will watch the rules file for changes, and reload its contents as needed.
 
-    * Watch Interval (ms, 0 to disable)
+    * _HTTP Responses (inbound)_:
+      * Enabled
+        > default: on
 
-      useful while writing/testing new rules.<br>
-      this feature will watch the rules file for changes, and reload its contents as needed.
+        on/off toggle
+        * on:<br>intercept _HTTP Responses_ and apply its corresponding set of rules
+        * off:<br>disable this feature entirely
 
-      > default: 0 (off)
+      * Path to Rules File
+        > default: ''
 
-  * _HTTP Responses (inbound)_:
-    * on/off toggle
+        >  <sub>refer to __Comments / Implementation Notes__ for advanced usage</sub>
 
-      on: intercept _HTTP Responses_ and apply its corresponding set of rules<br>
-      off: disable this feature entirely
+      * Watch Interval (ms, 0 to disable)
+        > default: `0` (off)
 
-      > default: on
+        useful while writing/testing new rules.<br>
+        this feature will watch the rules file for changes, and reload its contents as needed.
 
-    * Path to Rules File
+  * __output: _save()___
+    * _HTTP Request Persistence_:
+      * Enabled
+        > default: on
 
-      >  <sub>refer to __Comments / Implementation Notes__ for advanced usage</sub>
+        on/off toggle
+        * on:<br>the `save()` helper function will save a record of the request to `Output File`
+        * off:<br>disable this feature entirely
 
-      > default: ''
+      * Path to Output File
+        > default: ''
 
-    * Watch Interval (ms, 0 to disable)
+        >  <sub>refer to __Comments / Implementation Notes__ for advanced usage</sub>
 
-      useful while writing/testing new rules.<br>
-      this feature will watch the rules file for changes, and reload its contents as needed.
+      * Maximum Number of Saved Requests
+        > default: `10`
 
-      > default: 0 (off)
+        this feature is intended to prevent the `Output File` from growing too large
+
+        * `> 0`:<br>when a request record is saved to `Output File`, the data is prepended. If after this addition there are more records stored in the file (ie: `N`) than the specified maximum number of records (ie: `X`), then only the first `X` are retained&hellip; and the trailing `(N-X)` are removed.
+        * `0`:<br>allow the file to grow without any limitation.
+
+  * __tools to _replay_ saved requests__
+    * _common settings_:
+      * Path to Download Directory
+        > default: `{DfltDwnld}`
+
+        >  <sub>refer to __Comments / Implementation Notes__ for advanced usage</sub>
+
+    * _wget_:
+      * Path to `wget` executable
+        > default: `/usr/bin/wget`
+
+        >  <sub>refer to __Comments / Implementation Notes__ for advanced usage</sub>
+
+      * Command-Line Options for `wget` executable
+        > default: `-c -nd --content-disposition --no-http-keep-alive --no-check-certificate -e robots=off --progress=dot:binary`
+
+    * _curl_:
+      > a reference implementation that adds support for this tool exists in a separate branch: [_replay/curl_](https://github.com/warren-bank/moz-rewrite/tree/replay/curl)
+
+      > this hasn't been merged into the `master` branch due to a small incompatability, which is described pretty well across both:
+        * the [release notes for: v2.00](https://github.com/warren-bank/moz-rewrite/releases/tag/v2.00)
+        * the [commit message for: 32cb770](https://github.com/warren-bank/moz-rewrite/commit/32cb77021d295c8e037381cd6e85df52f9c0f236)
+
+## Hidden Preferences
+
+  * `extensions.Moz-Rewrite.debug`
+    > default: `false`
+
+    _boolean_
+    * `true`:<br>enables debug log messages to be printed to the `Browser Console`
+    * `false`:<br>suppresses these log messages
+
+  * `extensions.Moz-Rewrite.case_sensitive`
+    > default: `false`
+
+    _boolean_
+    * `true`:<br>the alphabetic case of the URL and its components are preserved
+    * `false`:<br>the URL and its components are always normalized to lowercase, which allows regex patterns to be written in lowercase and omit a _case insensitive_ flag
+
+## Dialog Windows
+
+  * `Tools -> moz-rewrite -> user preferences`
+
+    > * same `Options` dialog as:<br>
+        * `Tools -> Add-ons`
+          * `Extensions`
+            * `moz-rewrite -> Options`
+    > * provides a graphical interface for the user to apply changes to the values of (non-hidden / user) addon preferences
+
+  * `Tools -> moz-rewrite -> view/replay saved requests`
+
+    > * _saved HTTP Requests_:
+        * list of all saved requests.<br>
+          for each, a checkbox is followed by the corresponding URL.
+    > * common form field controls
+    >   * _replay selected requests using.._
+
+    >     > button that displays a list of all supported download tools.<br>
+            this list currently contains:
+    >     > * wget
+
+    >   * _interactively identify each partial/incomplete download file_
+
+    >     > checkbox that
+    >     > * when:
+              * one or more _saved HTTP Requests_ are selected
+              * a download tool is chosen/activated from the list
+    >     > * if `checked`:
+              * for each of the selected _saved HTTP Requests_, an interactive `file picker` dialog will open and allow the user to choose the file path for the download.
+                * this workflow allows using the external download tool to be used to save data to arbitrary paths within the filesystem,<br>
+                  rather than only to the `Download Directory`.
+                * this is particularly useful for when the browser begins a download, but fails to complete.<br>
+                  in such a case,
+                  * if the request was saved&hellip;<br>
+                    or if the browser can re-request the download, and this subsequent request is saved&hellip;<br>
+                    <sub>without actually saving the file, and certainly __NOT__ over writing the previously downloaded partial/incomplete file</sub>
+                  * then the interactive dialog would allow the user to browse for this partial/incomplete file download
+    >     > * if not `checked`:
+              * for each of the selected _saved HTTP Requests_, the chosen download tool will begin saving/resuming the requested data.
+                * this data will be saved to a file in the `Download Directory`
+                * the filename will be determined by the external download tool.<br>
+                  factors that the tool may take into consideration:
+                  * a filename component of the requested URL
+                  * a 'content-disposition' header of the response
+                  * command-line options for the tool (in addon preferences)
+
+    >   * _fallback behavior when 'cancel' is chosen in interactive dialog_
+
+    >     > checkbox that
+    >     > * when:
+              * _interactively identify each partial/incomplete download file_ is `checked`
+              * an interactive `file picker` dialog is closed by the user without having selected a filepath
+                * `cancel` button
+                * `close window` (ie: "X") button
+    >     > * if `checked`:
+              * proceed with download and save to default directory
+    >     > * if not `checked`:
+              * skip _replay_ of the specific saved request
 
 ## Comments / Implementation Notes
 
   * data sets are stored in external files.<br>
     this allows them to be maintained using any text editor.
+
   * the addon asks to know the file path to each data set.<br>
     one for requests, one for responses.
+
   * there are two ways to specify a file path:
     * browse for file, which stores an absolute path.
     * manually enter the path, which is parsed in such a way that portable/relative paths are supported.<br>
@@ -317,12 +488,17 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
           * `{Home}`: <br>`%USERPROFILE%`
           * `{DfltDwnld}`: <br>`%USERPROFILE%\Downloads`
           * `{TmpD}`: <br>`%TEMP%`
-      * so.. if portability is a concern, then the following file paths should work nicely:
+      * so.. if portability is a concern, then the following file/directory paths should work nicely:
+          >  <sub>_(note: the specified paths must already exist; files/directories **won't** be created.)_</sub>
+
         * `{ProfD}/moz-rewrite/requests.js`
         * `{ProfD}/moz-rewrite/responses.js`
-  * the addon will (optionally) watch these files for updates.
-  * when a file path is changed (in addon preferences),<br>
-    or a watched file path has been updated (identified by its _last modification date_):
+        * `{ProfD}/moz-rewrite/saved_requests.txt`
+        * `{ProfD}/moz-rewrite/downloads`
+
+  * when enabled (in addon preferences), the addon will watch input data files for updates.
+  * when the path to an input data file is changed (in addon preferences),<br>
+    or an input data file having a watched path has been updated (identified by its _last modification date_):
     * the file contents are read into a string
     * the string is evaluated as javascript
     * the return value is validated for having the proper schema
@@ -338,45 +514,32 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
     * if there are no functions, then there's no need to create the contextual variables that would normally be available (in scope) to functions;
     * when it's appropriate to do so, eliminating this step makes the performance cost (of processing the corresponding rules array data set) extremely low.
 
-## Security Considerations / Vectors of Attack:
-
-  * In order for a blackhat (nefarious individual) to exploit [this addon](https://github.com/warren-bank/moz-rewrite), the following would need to occur:
-    1. install the addon
-    2. gain access to and modify some browser preferences
-    3. save a (javascript) file to a known path on the file system
-
-  * If a blackhat were to accomplish these "3 steps", among other things&hellip; they would be capable of the following:
-    * forward a message back to themself (into the cloud) that contains:
-      * a record of all requested domains along with their associated cookies
-      * contents of files that are accessible from the file system
-    * add/edit/delete files that are accessible from the file system
-
-  * Pretty scary stuff&hellip; can this really happen?
-    * first I need to say upfront that I'm _**NO SECURITY EXPERT**_&hellip;<br>
-      please take anything I say here as my own personal opinions, and nothing more.
-    * I can only see two ways that these "3 steps" could all occur:
-      1. evil addon:
-         * you intentionally install this (good) addon [step 1], since this step cannot be done silently
-         * you also intentionally install a different (bad) addon, which would be able to accomplish [steps 2-3]
-      2. evil roommate:
-         * if another person were able to:
-           * log onto your computer
-           * load Firefox using your profile<br>
-            <sub>( Firefox [supports multiple user profiles](https://support.mozilla.org/en-US/kb/profile-manager-create-and-remove-firefox-profiles), but [doesn't natively support password protecting access to using them](https://support.mozilla.org/en-US/questions/807379) )</sub>
-
-           then this person would be free to configure your environment in a way that allows them to spy. (ie: all "3 steps")
-
 ## A fork that isn't a fork&hellip;
 ##### a spoon, maybe?
 
-This [spoon](https://github.com/warren-bank/moz-rewrite-amo) is for [AMO](https://addons.mozilla.org/en-US/firefox/addon/rewrite-http-headers/), as well as a specific subset of users.
+[This spoon](https://github.com/warren-bank/moz-rewrite-amo) is for [AMO](https://addons.mozilla.org/en-US/firefox/addon/rewrite-http-headers/), as well as a specific subset of users.
 
   * I made a [one-off fork](https://github.com/warren-bank/moz-rewrite-amo) (from [v1.01](https://github.com/warren-bank/moz-rewrite/tree/v1.01)) that is __so__ intentionally crippled that it doesn't even belong in this repo.
-  * The reason behind doing so was the desire to host a version on [AMO](https://addons.mozilla.org/en-US/firefox/addon/rewrite-http-headers/).
+  * The reason behind doing so was the desire to host a version on [AMO &#40;<b>a</b>ddons.<b>m</b>ozilla.<b>o</b>rg&#41;](https://addons.mozilla.org/en-US/firefox/addon/rewrite-http-headers/).
   * The coding methodology that makes this tool so very powerful is, fundamentally, the strategic usage of the javascript `eval` statement.
-  * AMO doesn't accept/host addons that include `eval` for their own reasons, which are grounded in security concerns&hellip; including those discussed above.
+  * AMO doesn't accept/host addons that include `eval` for security related considerations.
   * A subset of (less technical) users would probably never make use of any advanced scripting features.
     This group would likely prefer a version that doesn't expose them to __any__ possible security risk.
+
+## Roadmap
+
+  * I may choose to update the `Sandbox` classes in this project to make use of the Mozilla `Cu.Sandbox` and `Cu.evalInSandbox` APIs
+    * pros:
+      * would (potentially) allow [moz-rewrite](https://github.com/warren-bank/moz-rewrite) to be hosted on AMO
+    * cons:
+      * the implementation of these Mozilla APIs appears to have been [broken since Firefox 17.0](https://bugzilla.mozilla.org/show_bug.cgi?id=1106165)
+      * I have mixed feelings about whether the reduced security risk would be worth giving up the ability to run protected code from within user-defined functions
+        * for some 3rd party to use this addon as a method of stealing information, they would need to:
+          * reconfigure the addon preferences
+          * store data files on local hard disk
+        * these changes would be simple to identify
+        * in order to make these changes, the machine would already need to be compromised&hellip;<br>
+          so what are we really saving?
 
 ## License
   > [GPLv2](http://www.gnu.org/licenses/gpl-2.0.txt)
