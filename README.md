@@ -260,7 +260,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
         "url" : new RegExp('^file://', 'i'),
         "headers" : function(){
             var $headers = {};
-            switch( request.window_location.file_ext.toLowerCase() ){
+            switch( request.uri.file_ext.toLowerCase() ){
                 case 'txt':
                     $headers['content-type'] = 'text/plain';
                     break;
