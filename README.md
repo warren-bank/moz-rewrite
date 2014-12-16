@@ -1,8 +1,8 @@
-## [moz-rewrite-amo](https://github.com/warren-bank/moz-rewrite-amo)
+# [moz-rewrite-amo](https://github.com/warren-bank/moz-rewrite-amo)
 
 Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily modifying HTTP headers in either direction
 
-### Summary
+## Summary
 
 * for security reasons, AMO (<b>a</b>ddons.<b>m</b>ozilla.<b>o</b>rg) generally won't accept an addon that uses the javascript `eval` statement
 * [moz-rewrite](https://github.com/warren-bank/moz-rewrite) needs to use `eval`
@@ -14,17 +14,17 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
   * most of its advanced functionality is removed
   * there's no potential for abuse, since the data will need to be proper JSON
 
-### Contextual Variables
+## Contextual Variables
 
 * none
 
-### Helper Functions
+## Helper Functions
 
 * none
 
-### Data Structure
+## Data Structure
 
-* sample _request_:
+* sample _request_ rules data set:
 
 ```javascript
 [
@@ -39,7 +39,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 ]
 ```
 
-* sample _response_:
+* sample _response_ rules data set:
 
 ```javascript
 [
@@ -79,7 +79,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 ]
 ```
 
-* diff:
+###### differences between this data structure and the format used by [moz-rewrite](https://github.com/warren-bank/moz-rewrite#user-content-data-structure):
   * the `url` regex pattern is stored in a string
   * `headers` is always a hash:
 
