@@ -51,12 +51,46 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 					if (header_value === false){
 						continue nextHeader;
 					}
-					else if (header_value === null){
+					if (header_value === null){
 						header_value = '';
-						httpChannel.setResponseHeader(header_key, header_value, false);
 					}
-					else if (typeof header_value === 'string'){
-						httpChannel.setResponseHeader(header_key, header_value, false);
+					if (typeof header_value === 'string'){
+						try {
+							httpChannel.setResponseHeader(header_key, header_value, false);
+						}
+						catch(e){
+							if ( self.debug() ){
+								self.debug('(process_channel|error|summary): ' + 'unable to modify value of HTTP Response header = ' + header_key);
+								self.debug('(process_channel|error|message): ' + e.message);
+							}
+
+							// throws Exception
+							(function(){
+								// apply special handlers for specific headers, which cannot be "set" using the above API method
+								var channel_attribute;
+
+								switch(header_key){
+									case 'content-type':
+										channel_attribute	= 'contentType';
+										break;
+									default:
+										throw e;
+								}
+
+								try {
+									// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIChannel
+									httpChannel[channel_attribute] = header_value;
+								}
+								catch(ee){
+									if ( self.debug() ){
+										self.debug('(process_channel|error|summary): ' + 'unable to modify attribute of (response) HTTP Channel = ' + channel_attribute);
+										self.debug('(process_channel|error|message): ' + ee.message);
+									}
+									throw e;
+								}
+							})();
+
+						}
 					}
 				}
 			}
