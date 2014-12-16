@@ -1,0 +1,11 @@
+[
+    {
+        "url" : "#(?:[^/,]+[/,])*(?:HTTP-Archive-Viewer|JSON-DataView)(?:[/,]|$)",
+        "headers" : {
+            "Content-Type"              : "application/json",
+            "Content-Disposition"       : null,
+            "Content-Security-Policy"   : null,
+            "X-Content-Security-Policy" : null
+        }
+    }
+]
