@@ -1,12 +1,8 @@
-content Moz-Rewrite chrome/content/
-skin Moz-Rewrite hfskin chrome/skin/
+content Moz-Safe-Rewrite chrome/content/
+skin Moz-Safe-Rewrite hfskin chrome/skin/
 
 # =========================================================
 # update the leaf directory to test different variations
-#   1. barebone boilerplate with simple examples of how to rewrite both requests and responses
-#          components/01_skeleton_frame/
-#   2. stripped down to nothingness: declares a (global) variable, loads a module with a function that tries to reference the global variable and log it to the browser console
-#          components/02_test_module_scope/##/
 #   3. full fledged addon (single file)
 #          components/03_monolithic_addon/
 #   4. full fledged addon (modules)
@@ -14,21 +10,21 @@ skin Moz-Rewrite hfskin chrome/skin/
 # =========================================================
 # example #1:
 # ===========
-# resource Moz-Rewrite components/03_monolithic_addon/
-# component {1f5c019c-16d0-4c8e-a397-effac1253135} components/03_monolithic_addon/moz-rewrite.js
+# resource Moz-Safe-Rewrite components/03_monolithic_addon/
+# component {e741f03c-107a-472e-801d-c2481108037e} components/03_monolithic_addon/moz-safe-rewrite.js
 # =========================================================
 # example #2:
 # ===========
-# resource Moz-Rewrite components/04_modular_addon/
-# component {1f5c019c-16d0-4c8e-a397-effac1253135} components/04_modular_addon/moz-rewrite.js
+# resource Moz-Safe-Rewrite components/04_modular_addon/
+# component {e741f03c-107a-472e-801d-c2481108037e} components/04_modular_addon/moz-safe-rewrite.js
 # =========================================================
 # active:
 # =======
-resource Moz-Rewrite components/04_modular_addon/
-component {1f5c019c-16d0-4c8e-a397-effac1253135} components/04_modular_addon/moz-rewrite.js
+resource Moz-Safe-Rewrite components/04_modular_addon/
+component {e741f03c-107a-472e-801d-c2481108037e} components/04_modular_addon/moz-safe-rewrite.js
 # =========================================================
 
-contract @github.com/moz-rewrite;1 {1f5c019c-16d0-4c8e-a397-effac1253135}
-category profile-after-change Moz-Rewrite @github.com/moz-rewrite;1
+contract @github.com/moz-rewrite-amo;1 {e741f03c-107a-472e-801d-c2481108037e}
+category profile-after-change Moz-Safe-Rewrite @github.com/moz-rewrite-amo;1
 
-locale Moz-Rewrite en-US chrome/locale/en-US/
+locale Moz-Safe-Rewrite en-US chrome/locale/en-US/

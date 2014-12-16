@@ -1,9 +1,9 @@
 /*
  * --------------------------------------------------------
  * project
- *     name:    moz-rewrite
+ *     name:    moz-safe-rewrite
  *     summary: Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily modifying HTTP headers in either direction
- *     url:     https://github.com/warren-bank/moz-rewrite
+ *     url:     https://github.com/warren-bank/moz-rewrite-amo
  * author
  *     name:    Warren R Bank
  *     email:   warren.r.bank@gmail.com
@@ -23,8 +23,8 @@ const Cc				= Components.classes;
 const Cu				= Components.utils;
 const Cr				= Components.results;
 
-Cu.import("resource://Moz-Rewrite/Class.js");
-Cu.import("resource://Moz-Rewrite/helper_functions.js");
+Cu.import("resource://Moz-Safe-Rewrite/Class.js");
+Cu.import("resource://Moz-Safe-Rewrite/helper_functions.js");
 
 Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/FileUtils.jsm");
@@ -35,10 +35,8 @@ var HTTP_Stream = Class.extend({
 		this.log			= helper_functions.wrap_console_log(('HTTP_' + this.type + '_stream: '), false);
 		this.rules_file		= null;
 		this.rules_data		= null;
-		this.has_functions	= false;
 		this.watch_timer	= null;
 		this.debug			= null;
-		this.sandbox		= null;		// abstract: Shared_Sandbox
 
 		if (auto_init){
 			this.at_startup();
@@ -61,7 +59,6 @@ var HTTP_Stream = Class.extend({
 			// (re)initialize state
 			self.rules_file		= null;
 			self.rules_data		= null;
-			self.has_functions	= false;
 			self.watch_timer	= null;
 
 			// check that this stream is enabled
@@ -72,7 +69,6 @@ var HTTP_Stream = Class.extend({
 				var is_disabled;
 				is_disabled			= ( (helper_functions.get_prefs()).getBoolPref("debug") == false );
 				self.debug			= helper_functions.wrap_console_log(('HTTP_' + self.type + '_stream: '), is_disabled);
-				self.sandbox.debug	= helper_functions.wrap_console_log(('HTTP_' + self.type + '_sandbox: '), is_disabled);
 			})();
 
 			// get the rules file
@@ -173,7 +169,7 @@ var HTTP_Stream = Class.extend({
 		var rules_data;
 
 		try {
-			rules_data = self.sandbox.eval(file_text);
+			rules_data = JSON.parse(file_text);
 			self.debug() && self.debug('(evaluate_rules_file|checkpoint|01): ' + JSON.stringify(rules_data));
 
 			// sanity check
@@ -192,14 +188,13 @@ var HTTP_Stream = Class.extend({
 			else {
 				// `rules_data` is a non-empty array
 				// walk the data set to validate proper format.
-				// at the same time, look for the presence of javascript function(s) and update `has_functions`
+				// at the same time, convert `url` attribute values into RegExp objects
 				self.validate_rules_data(rules_data);
 			}
 		}
 		catch(e){
 			self.log('(evaluate_rules_file|parsing|error): ' + e.message);
 			self.rules_data		= null;
-			self.has_functions	= false;
 		}
 	},
 
@@ -207,14 +202,9 @@ var HTTP_Stream = Class.extend({
 		var self = this;
 
 		// * validate: `raw_rules_data`
-		// * update: `rules_data`, `has_functions`
-		//   - a function can only occur in place of:
-		//       rule.headers
-		//       rule.headers[key]
-		//       rule.stop
+		// * update: `rules_data`
 
 		var sanitized_rules_data = [];
-		var js_found = false;
 		var empty_string_pattern = /^\s+$/;
 		var i, rule, sanitized_rule, count, header_key, header_value;
 
@@ -228,28 +218,30 @@ var HTTP_Stream = Class.extend({
 				(rule === null)
 			){continue nextRule;}
 
+			try {
+				rule.url = new RegExp(rule.url, 'i');
+			}
+			catch(e){}
+
 			// rule.url is: regexp
 			if (
 				(helper_functions.get_object_constructor_name(rule.url, true) !== 'regexp')
 			){continue nextRule;}
 			sanitized_rule.url = rule.url;
 
-			// rule.stop is: [undefined, boolean, function]
+			// rule.stop is: [undefined, boolean]
 			switch(typeof rule.stop){
 				case 'undefined':
 					rule.stop = false;
 					break;
 				case 'boolean':
 					break;
-				case 'function':
-					js_found = true;
-					break;
 				default:
 					continue nextRule;
 			}
 			sanitized_rule.stop = rule.stop;
 
-			// rule.headers is: [object, function]
+			// rule.headers is: [object]
 			switch(typeof rule.headers){
 				case 'object':
 					count = 0;
@@ -257,7 +249,7 @@ var HTTP_Stream = Class.extend({
 					nextHeader: for (header_key in rule.headers){
 						header_value = rule.headers[header_key];
 
-						// header_value is: [boolean false, object null, string non-empty, function]
+						// header_value is: [boolean false, object null, string non-empty]
 						switch(typeof header_value){
 							case 'boolean':
 								if (
@@ -275,9 +267,6 @@ var HTTP_Stream = Class.extend({
 									(empty_string_pattern.test(header_value))
 								){continue nextHeader;}
 								break;
-							case 'function':
-								js_found = true;
-								break;
 							default:
 								continue nextHeader;
 						}
@@ -287,10 +276,6 @@ var HTTP_Stream = Class.extend({
 					}
 
 					if (! count){continue nextRule;}
-					break;
-				case 'function':
-					js_found = true;
-					sanitized_rule.headers = rule.headers;
 					break;
 				default:
 					continue nextRule;
@@ -302,11 +287,9 @@ var HTTP_Stream = Class.extend({
 
 		if (sanitized_rules_data.length){
 			self.rules_data		= sanitized_rules_data;
-			self.has_functions	= js_found;
 		}
 		else {
 			self.rules_data		= null;
-			self.has_functions	= false;
 		}
 	},
 
@@ -343,7 +326,6 @@ var HTTP_Stream = Class.extend({
 					// Just clear the rules data and continue to watch.
 					// May want to adjust the interval of the timer. (ex: 10x the value stored in prefs)
 					self.rules_data		= null;
-					self.has_functions	= false;
 					return;
 				}
 
@@ -371,145 +353,21 @@ var HTTP_Stream = Class.extend({
 
 		self.rules_file		= null;
 		self.rules_data		= null;
-		self.has_functions	= false;
 		self.watch_timer	= null;
 
 		self.debug			= null;
-		self.sandbox.debug	= null;
 	},
 
 	"process_channel":	function(httpChannel){
 		// abstract function
 	},
 
-	"get_request_data": function(httpChannel){
-		var self = this;
-
-		// available while processing both requests and responses
-		var request_data;
-
-		try {
-			request_data				= {};
-			request_data.original_uri	= self.get_uri_components(httpChannel.originalURI);
-			request_data.uri			= self.get_uri_components(httpChannel.URI);
-			request_data.referrer		= self.get_uri_components(httpChannel.referrer);
-			request_data.method			= httpChannel.requestMethod;
-			request_data.headers		= {
-				"unmodified"			: self.get_HTTP_headers(httpChannel, false),
-				"updated"				: {}
-			};
-		}
-		catch(e){
-		//	request_data = null;
-			self.log('(get_request_data|error): ' + e.message);
-		}
-		finally {
-			return request_data;
-		}
-	},
-
-	"get_uri_components": function(uri){
-		var self = this;
-		var components, url;
-
-		try {
-			components			= {
-				"href"			: (uri.spec),
-				"protocol"		: (uri.scheme + ':'),
-				"username"		: (uri.username),
-				"password"		: (uri.password),
-				"host"			: (uri.host),
-				"port"			: ((uri.port == -1)? '' : ('' + uri.port)),
-				"path"			: (uri.path),
-				"query"			: '',
-				"hash"			: ((uri.ref)? ('#' + uri.ref) : ''),
-				"file_ext"		: ''
-			};
-
-			url					= uri.QueryInterface(Ci.nsIURL);
-			components.path		= url.filePath;
-			components.query	= url.query;
-			components.file_ext	= url.fileExtension;
-		}
-		catch(e){
-			self.log('(get_uri_components|url|error): ' + 'uri is not a valid url: ' + uri.asciiSpec);
-			self.log('(get_uri_components|url|error): ' + e.message);
-		}
-		finally {
-			return components;
-		}
-	},
-
-	"get_HTTP_headers": function(httpChannel, get_response){
-		var headers;
-
-		// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIHttpChannel#visitRequestHeaders()
-		// https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIHttpHeaderVisitor
-		var visitor, the_visitor;
-		try {
-			visitor = function(){
-				this.headers = {};
-			};
-			visitor.prototype = {
-				"visitHeader": function(header_key, header_value){
-					// sanity check
-					if (
-						(typeof header_key !== 'string') ||
-						(header_key === '') ||
-						(typeof header_value !== 'string') ||
-						(header_value === '')
-					){return;}
-
-					this.headers[ header_key.toLowerCase() ] = header_value;
-				}
-			};
-			the_visitor = new visitor();
-
-			if (get_response){
-				httpChannel.visitResponseHeaders(the_visitor);
-			}
-			else {
-				httpChannel.visitRequestHeaders(the_visitor);
-			}
-			headers = the_visitor.headers;
-		}
-		catch(e){
-			headers = null;
-			self.log('(get_request_headers|error): ' + e.message);
-		}
-		finally {
-			return headers;
-		}
-	},
-
-	"process_channel_rules_data": function(url, post_rule_callback){
+	"process_channel_rules_data": function(url){
 		var self = this;
 		var updated_headers = {};
 
 		// sanity check: is there any work to do?
 		if (! self.rules_data){return;}
-
-		var run_function = function(f){
-			// sanity check
-			if (
-				(typeof f !== 'function') ||
-				(! self.sandbox)
-			){return null;}
-
-			var result;
-
-			try {
-				result = self.sandbox.call(f);
-				self.debug() && self.debug('(process_channel_rules_data|sandbox|call(f)|checkpoint|01): ' + 'f = ' + f.toSource() + '; result = ' + JSON.stringify(result));
-			}
-			catch(e){
-				result = null;
-				self.log('(process_channel_rules_data|sandbox|error): ' + e.message);
-			}
-			finally {
-				return result;
-			}
-		};
 
 		var empty_string_pattern = /^\s+$/;
 		var i, rule, local_headers, header_key, local_header_value, local_stop;
@@ -524,9 +382,6 @@ var HTTP_Stream = Class.extend({
 				// matching rule
 
 				switch(typeof rule.headers){
-					case 'function':
-						local_headers	= run_function( rule.headers );
-						break;
 					case 'object':
 						local_headers	= rule.headers;
 						break;
@@ -541,9 +396,6 @@ var HTTP_Stream = Class.extend({
 
 				nextHeader: for (header_key in local_headers){
 					switch(typeof local_headers[header_key]){
-						case 'function':
-							local_header_value	= run_function( local_headers[header_key] );
-							break;
 						default:
 							local_header_value	= local_headers[header_key];
 							break;
@@ -571,18 +423,9 @@ var HTTP_Stream = Class.extend({
 
 					// header value is valid
 					updated_headers[ header_key.toLowerCase() ] = local_header_value;
-
-					// call callback function now, or wait until all headers in the current rule are processed?
-					// I vote for now..
-					if (typeof post_rule_callback === 'function'){
-						post_rule_callback(updated_headers);
-					}
 				}
 
 				switch(typeof rule.stop){
-					case 'function':
-						local_stop		= run_function( rule.stop );
-						break;
 					case 'boolean':
 						local_stop		= rule.stop;
 						break;

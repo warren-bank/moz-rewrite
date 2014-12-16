@@ -1,9 +1,9 @@
 /*
  * --------------------------------------------------------
  * project
- *     name:    moz-rewrite
+ *     name:    moz-safe-rewrite
  *     summary: Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily modifying HTTP headers in either direction
- *     url:     https://github.com/warren-bank/moz-rewrite
+ *     url:     https://github.com/warren-bank/moz-rewrite-amo
  * author
  *     name:    Warren R Bank
  *     email:   warren.r.bank@gmail.com
@@ -50,7 +50,7 @@ var helper_functions = {
 	"get_prefs": function(sub_branch_name) {
 		var branch_name;
 
-		branch_name		= "extensions.Moz-Rewrite." + (sub_branch_name? sub_branch_name : '');
+		branch_name		= "extensions.Moz-Safe-Rewrite." + (sub_branch_name? sub_branch_name : '');
 
 		return Cc["@mozilla.org/preferences-service;1"]
 				.getService(Ci.nsIPrefService)
@@ -74,23 +74,6 @@ var helper_functions = {
 		}
 
 		return name;
-	},
-
-	"extend_object": function(o1, o2){
-		var key;
-		for (key in o2){
-			o1[key] = o2[key];
-		}
-		return o1;
-	},
-
-	"get_object_summary": function(o1, raw){
-		var o2, key;
-		o2 = {};
-		for (key in o1){
-			o2[key] = (typeof o1[key]);
-		}
-		return (raw? o2 : JSON.stringify(o2));
 	}
 
 };

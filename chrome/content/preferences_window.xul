@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <?xml-stylesheet href="chrome://global/skin/global.css" type="text/css"?>
-<?xml-stylesheet href="chrome://Moz-Rewrite/skin/preferences_window.css" type="text/css"?>
+<?xml-stylesheet href="chrome://Moz-Safe-Rewrite/skin/preferences_window.css" type="text/css"?>
 
-<!DOCTYPE prefwindow SYSTEM "chrome://Moz-Rewrite/locale/preferences_window.dtd">
+<!DOCTYPE prefwindow SYSTEM "chrome://Moz-Safe-Rewrite/locale/preferences_window.dtd">
 
-<prefwindow id="Moz-Rewrite-prefs"
+<prefwindow id="Moz-Safe-Rewrite-prefs"
 	type="prefwindow"
 	windowtype="Browser:Preferences"
 	title="&prefwindow.Moz_Rewrite.title.window;"
@@ -16,15 +16,15 @@
 		ondialogaccept="return prefwindow.ondialogaccept()"
 	-->
 
-	<prefpane id="Moz-Rewrite-pane" label="&prefwindow.Moz_Rewrite.title.pane;">
+	<prefpane id="Moz-Safe-Rewrite-pane" label="&prefwindow.Moz_Rewrite.title.pane;">
 		<preferences>
-			<preference id="request_enabled"                     name="extensions.Moz-Rewrite.request.enabled"                     type="bool"/>
-			<preference id="request_rules_file_path"             name="extensions.Moz-Rewrite.request.rules_file.path"             type="string"/>
-			<preference id="request_rules_file_watch_interval"   name="extensions.Moz-Rewrite.request.rules_file.watch_interval"   type="int"/>
+			<preference id="request_enabled"                     name="extensions.Moz-Safe-Rewrite.request.enabled"                     type="bool"/>
+			<preference id="request_rules_file_path"             name="extensions.Moz-Safe-Rewrite.request.rules_file.path"             type="string"/>
+			<preference id="request_rules_file_watch_interval"   name="extensions.Moz-Safe-Rewrite.request.rules_file.watch_interval"   type="int"/>
 
-			<preference id="response_enabled"                    name="extensions.Moz-Rewrite.response.enabled"                    type="bool"/>
-			<preference id="response_rules_file_path"            name="extensions.Moz-Rewrite.response.rules_file.path"            type="string"/>
-			<preference id="response_rules_file_watch_interval"  name="extensions.Moz-Rewrite.response.rules_file.watch_interval"  type="int"/>
+			<preference id="response_enabled"                    name="extensions.Moz-Safe-Rewrite.response.enabled"                    type="bool"/>
+			<preference id="response_rules_file_path"            name="extensions.Moz-Safe-Rewrite.response.rules_file.path"            type="string"/>
+			<preference id="response_rules_file_watch_interval"  name="extensions.Moz-Safe-Rewrite.response.rules_file.watch_interval"  type="int"/>
 		</preferences>
 
 		<groupbox>
@@ -35,7 +35,7 @@
 			<separator class="thin"/>
 			<label value="&prefwindow.Moz_Rewrite.label.request.rules_file.path;: "/>
 			<hbox>
-				<textbox preference="request_rules_file_path" id="request_rules_file_path_element" multiline="false" newlines="stripsurroundingwhitespace" placeholder="{ProfD}/moz-rewrite/requests.js" flex="1"/>
+				<textbox preference="request_rules_file_path" id="request_rules_file_path_element" multiline="false" newlines="stripsurroundingwhitespace" placeholder="{ProfD}/moz-safe-rewrite/requests.js" flex="1"/>
 				<button label="&prefwindow.Moz_Rewrite.label.request.rules_file.find_button;.." oncommand="prefwindow.open_file_find_dialog('request_rules_file_path_element', '&prefwindow.Moz_Rewrite.title.dialog_window.request_rules_file;');"/>
 			</hbox>
 
@@ -58,7 +58,7 @@
 			<separator class="thin"/>
 			<label value="&prefwindow.Moz_Rewrite.label.response.rules_file.path;: "/>
 			<hbox>
-				<textbox preference="response_rules_file_path" id="response_rules_file_path_element" multiline="false" newlines="stripsurroundingwhitespace" placeholder="{ProfD}/moz-rewrite/responses.js" flex="1"/>
+				<textbox preference="response_rules_file_path" id="response_rules_file_path_element" multiline="false" newlines="stripsurroundingwhitespace" placeholder="{ProfD}/moz-safe-rewrite/responses.js" flex="1"/>
 				<button label="&prefwindow.Moz_Rewrite.label.response.rules_file.find_button;.." oncommand="prefwindow.open_file_find_dialog('response_rules_file_path_element', '&prefwindow.Moz_Rewrite.title.dialog_window.response_rules_file;');"/>
 			</hbox>
 
@@ -72,6 +72,6 @@
 
 	</prefpane>
 
-	<script type="application/x-javascript" src="chrome://Moz-Rewrite/content/preferences_window.js" />
+	<script type="application/x-javascript" src="chrome://Moz-Safe-Rewrite/content/preferences_window.js" />
 
 </prefwindow>

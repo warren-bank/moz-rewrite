@@ -1,9 +1,9 @@
 /*
  * --------------------------------------------------------
  * project
- *     name:    moz-rewrite
+ *     name:    moz-safe-rewrite
  *     summary: Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily modifying HTTP headers in either direction
- *     url:     https://github.com/warren-bank/moz-rewrite
+ *     url:     https://github.com/warren-bank/moz-rewrite-amo
  * author
  *     name:    Warren R Bank
  *     email:   warren.r.bank@gmail.com
@@ -24,36 +24,36 @@ const OS	= Cc['@mozilla.org/observer-service;1'].getService(Ci.nsIObserverServic
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-Cu.import("resource://Moz-Rewrite/helper_functions.js");
-Cu.import("resource://Moz-Rewrite/HTTP_Request_Stream.js");
-Cu.import("resource://Moz-Rewrite/HTTP_Response_Stream.js");
+Cu.import("resource://Moz-Safe-Rewrite/helper_functions.js");
+Cu.import("resource://Moz-Safe-Rewrite/HTTP_Request_Stream.js");
+Cu.import("resource://Moz-Safe-Rewrite/HTTP_Response_Stream.js");
 
-// ------------------------------------------------------------------------------------------------ "Moz_Rewrite" XPCOM component boilerplate
+// ------------------------------------------------------------------------------------------------ "Moz_Safe_Rewrite" XPCOM component boilerplate
 
-function Moz_Rewrite() {
+function Moz_Safe_Rewrite() {
 	this.wrappedJSObject		= this;
 	this.prefs					= helper_functions.get_prefs();
-	this.log					= helper_functions.wrap_console_log('moz-rewrite: ', false);
+	this.log					= helper_functions.wrap_console_log('moz-safe-rewrite: ', false);
 	this.debug					= null;
 	this.observers				= [];
 	this.HTTP_Request_Stream	= new HTTP_Request_Stream(false);
 	this.HTTP_Response_Stream	= new HTTP_Response_Stream(false);
 }
 
-Moz_Rewrite.prototype = {
+Moz_Safe_Rewrite.prototype = {
 
 	// properties required for XPCOM registration:
-	"classID"					: Components.ID("{1f5c019c-16d0-4c8e-a397-effac1253135}"),
-	"contractID"				: "@github.com/moz-rewrite;1",
+	"classID"					: Components.ID("{e741f03c-107a-472e-801d-c2481108037e}"),
+	"contractID"				: "@github.com/moz-rewrite-amo;1",
 	"classDescription"			: "A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction",
 
 	"_xpcom_factory"			: {
 		"createInstance"		: function (outer, iid) {
 			if (outer != null)
 				throw Cr.NS_ERROR_NO_AGGREGATION;
-			if (!Moz_Rewrite.instance)
-				Moz_Rewrite.instance = new Moz_Rewrite();
-			return Moz_Rewrite.instance.QueryInterface(iid);
+			if (!Moz_Safe_Rewrite.instance)
+				Moz_Safe_Rewrite.instance = new Moz_Safe_Rewrite();
+			return Moz_Safe_Rewrite.instance.QueryInterface(iid);
 		},
 		"QueryInterface"		: XPCOMUtils.generateQI([
 				Ci.nsISupports,
@@ -144,7 +144,7 @@ Moz_Rewrite.prototype = {
 	"at_startup":				function(){
 		var self = this;
 		try {
-			//self.debug = helper_functions.wrap_console_log('moz-rewrite: ', ( self.prefs.getBoolPref("debug") == false ));
+			//self.debug = helper_functions.wrap_console_log('moz-safe-rewrite: ', ( self.prefs.getBoolPref("debug") == false ));
 
 			if (self.prefs.getBoolPref("request.enabled")){
 				OS.addObserver(self, "http-on-modify-request", false);
@@ -193,6 +193,6 @@ Moz_Rewrite.prototype = {
 // ------------------------------------------------------------------------------------------------ "XPCOMUtils" registration:
 
 if (XPCOMUtils.generateNSGetFactory)
-    var NSGetFactory = XPCOMUtils.generateNSGetFactory([Moz_Rewrite]);
+    var NSGetFactory = XPCOMUtils.generateNSGetFactory([Moz_Safe_Rewrite]);
 else
-    var NSGetModule = XPCOMUtils.generateNSGetModule([Moz_Rewrite]);
+    var NSGetModule = XPCOMUtils.generateNSGetModule([Moz_Safe_Rewrite]);
