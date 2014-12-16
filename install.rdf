@@ -2,10 +2,10 @@
 <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 	<Description about="urn:mozilla:install-manifest">
 		<em:id>moz-rewrite-amo@warren-bank.github.com</em:id>
-		<em:version>1.00</em:version>
+		<em:version>1.01</em:version>
 		<em:type>2</em:type>
 
-		<em:name>moz-safe-rewrite</em:name>
+		<em:name>Rewrite HTTP Headers</em:name>
 		<em:description>A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction</em:description>
 		<em:creator>Warren Bank</em:creator>
 		<em:homepageURL>https://github.com/warren-bank/moz-rewrite-amo</em:homepageURL>
@@ -26,7 +26,7 @@
 		<em:localized>
 			<Description>
 				<em:locale>en-US</em:locale>
-				<em:name>moz-safe-rewrite</em:name>
+				<em:name>Rewrite HTTP Headers</em:name>
 				<em:description>A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction</em:description>
 				<em:creator>Warren Bank</em:creator>
 			</Description>

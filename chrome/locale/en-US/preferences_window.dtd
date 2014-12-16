@@ -1,7 +1,7 @@
-<!ENTITY prefwindow.Moz_Rewrite.title.window "moz-safe-rewrite: user preferences">
+<!ENTITY prefwindow.Moz_Rewrite.title.window "Rewrite HTTP Headers: user preferences">
 <!ENTITY prefwindow.Moz_Rewrite.title.pane "General Options">
-<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.request_rules_file "moz-safe-rewrite: Rules File for HTTP Requests">
-<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.response_rules_file "moz-safe-rewrite: Rules File for HTTP Responses">
+<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.request_rules_file "Rewrite HTTP Headers: Rules File for HTTP Requests">
+<!ENTITY prefwindow.Moz_Rewrite.title.dialog_window.response_rules_file "Rewrite HTTP Headers: Rules File for HTTP Responses">
 
 <!ENTITY prefwindow.Moz_Rewrite.heading.requests "HTTP Requests (outbound)">
 <!ENTITY prefwindow.Moz_Rewrite.heading.responses "HTTP Responses (inbound)">

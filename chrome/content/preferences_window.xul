@@ -35,7 +35,7 @@
 			<separator class="thin"/>
 			<label value="&prefwindow.Moz_Rewrite.label.request.rules_file.path;: "/>
 			<hbox>
-				<textbox preference="request_rules_file_path" id="request_rules_file_path_element" multiline="false" newlines="stripsurroundingwhitespace" placeholder="{ProfD}/moz-safe-rewrite/requests.js" flex="1"/>
+				<textbox preference="request_rules_file_path" id="request_rules_file_path_element" multiline="false" newlines="stripsurroundingwhitespace" placeholder="{ProfD}/rewrite-http-headers/requests.js" flex="1"/>
 				<button label="&prefwindow.Moz_Rewrite.label.request.rules_file.find_button;.." oncommand="prefwindow.open_file_find_dialog('request_rules_file_path_element', '&prefwindow.Moz_Rewrite.title.dialog_window.request_rules_file;');"/>
 			</hbox>
 
@@ -58,7 +58,7 @@
 			<separator class="thin"/>
 			<label value="&prefwindow.Moz_Rewrite.label.response.rules_file.path;: "/>
 			<hbox>
-				<textbox preference="response_rules_file_path" id="response_rules_file_path_element" multiline="false" newlines="stripsurroundingwhitespace" placeholder="{ProfD}/moz-safe-rewrite/responses.js" flex="1"/>
+				<textbox preference="response_rules_file_path" id="response_rules_file_path_element" multiline="false" newlines="stripsurroundingwhitespace" placeholder="{ProfD}/rewrite-http-headers/responses.js" flex="1"/>
 				<button label="&prefwindow.Moz_Rewrite.label.response.rules_file.find_button;.." oncommand="prefwindow.open_file_find_dialog('response_rules_file_path_element', '&prefwindow.Moz_Rewrite.title.dialog_window.response_rules_file;');"/>
 			</hbox>
 
