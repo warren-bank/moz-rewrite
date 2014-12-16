@@ -22,60 +22,63 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 
 * none
 
-## Data Structure
+## Data Structure <sub>(examples)</sub>
 
-* sample _request_ rules data set:
+* sample _request_ rule(s):
+
+  > analogous to:
+  > * [this _moz-rewrite_ example](https://github.com/warren-bank/moz-rewrite#user-content-simple-examples)
 
 ```javascript
 [
-{
-    "url": "^.*$",
-    "headers": {
-        "X-Demo-Header-1": "Hello moz-safe-rewrite",
-        "X-Demo-Header-2": "Goodbye moz-safe-rewrite"
+    {
+        "url" : "^.*$",
+        "headers" : {
+            "X-Custom-Sample-Header-01" : "Foo",
+            "X-Custom-Sample-Header-02" : "Bar",
+            "X-Custom-Sample-Header-03" : "Baz"
+        }
     },
-    "stop": true
-}
+    {
+        "url" : "^https:",
+        "headers" : {
+            "X-Custom-Sample-Header-01" : false,
+            "X-Custom-Sample-Header-02" : false,
+            "X-Custom-Sample-Header-03" : false
+        },
+        "stop": true
+    },
+    {
+        "url" : "^.*$",
+        "headers" : {
+            "X-Custom-Sample-Header-01" : "Hello",
+            "X-Custom-Sample-Header-03" : false
+        }
+    }
 ]
 ```
 
-* sample _response_ rules data set:
+* sample _response_ rule(s):
+
+  > analogous to:
+  > * [a portion of this _moz-rewrite_ recipe](https://github.com/warren-bank/moz-rewrite/blob/data/recipe-book/response/disable%20CSP.js)
+
+  > mentioned as a solution to issue(s):
+  > * [_HTTP Archive Viewer_ issue: 1](https://github.com/warren-bank/moz-harviewer/issues/1)
+  > * [_JSON-DataView_ issue: 5](https://github.com/warren-bank/moz-json-data-view/issues/5#issuecomment-63533063)
+  > * [_JSON-DataView_ issue: 7](https://github.com/warren-bank/moz-json-data-view/issues/7#issuecomment-64692997)
 
 ```javascript
 [
-{
-    "url" : "^.*$",
-    "headers" : {
-        "Content-Security-Policy" : "default-src * 'self' data: mediastream:;frame-ancestors *",
-        "X-Content-Security-Policy" : null,
-        "X-Frame-Options" : null
+    {
+        "url" : "#(?:[^/,]+[/,])*(?:HTTP-Archive-Viewer|JSON-DataView)(?:[/,]|$)",
+        "headers" : {
+            "Content-Type"              : "application/json",
+            "Content-Disposition"       : null,
+            "Content-Security-Policy"   : null,
+            "X-Content-Security-Policy" : null
+        }
     }
-},
-{
-    "url" : "^(file://|https?://localhost/).*$",
-    "headers" : {
-        "Access-Control-Allow-Origin" : "*",
-        "Access-Control-Allow-Methods" : "GET,POST"
-    },
-    "stop": true
-},
-{
-    "url" : "^https?://api\\.github\\.com/.*$",
-    "headers" : {
-        "Content-Security-Policy" : null
-    },
-    "stop": true
-},
-{
-    "url" : "^https://.*(bank|billpay|checking).*$",
-    "headers" : {
-        "Content-Security-Policy" : false,
-        "X-Content-Security-Policy" : false,
-        "X-Frame-Options" : false,
-        "Access-Control-Allow-Origin" : false,
-        "Access-Control-Allow-Methods" : false
-    }
-}
 ]
 ```
 
