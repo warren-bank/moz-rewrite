@@ -516,14 +516,6 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 
 ## Alternate Implementations / Branches
 
-  * [`js/Cu.evalInSandbox/master`](https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master) (_default_):
-    * rule data files contain javascript, and are evaluated using the Mozilla `Cu.Sandbox` and `Cu.evalInSandbox` APIs
-    * security context: _null_ principal
-      * pros:
-        * should pass AMO review
-      * cons:
-        * gives up the ability to run protected code from within user-defined functions
-
   * [`js/eval/master`](https://github.com/warren-bank/moz-rewrite/tree/js/eval/master):
     * rule data files contain javascript, and are evaluated using the `eval()` function
     * security context: _system_ principal
@@ -532,6 +524,14 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
       * cons:
         * would (most likely) fail AMO review.<br>
           for security related considerations, they have a general policy to disallow any addon that uses the `eval()` function.
+
+  * [`js/Cu.evalInSandbox/master`](https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master) (_default, current_):
+    * rule data files contain javascript, and are evaluated using the Mozilla `Cu.Sandbox` and `Cu.evalInSandbox` APIs
+    * security context: _null_ principal
+      * pros:
+        * should pass AMO review
+      * cons:
+        * gives up the ability to run protected code from within user-defined functions
 
   * [`json/master`](https://github.com/warren-bank/moz-rewrite/tree/json/master):
     * rule data files contain JSON, and are parsed using the native `JSON.parse()` function
@@ -545,7 +545,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 
 ## AMO
 
-  * currently, [v1.03](https://github.com/warren-bank/moz-rewrite/releases/tag/json%2Fv1.03) of the [`json/master`](https://github.com/warren-bank/moz-rewrite/tree/json/master) branch is available on [AMO &#40;<b>a</b>ddons.<b>m</b>ozilla.<b>o</b>rg&#41;](https://addons.mozilla.org/en-US/firefox/addon/rewrite-http-headers/)
+  * currently, [v1.03](https://github.com/warren-bank/moz-rewrite/releases/tag/json%2Fv1.03) of the [`json/master`](https://github.com/warren-bank/moz-rewrite/tree/json/master) branch is available on [AMO &#40;<b>a</b>ddons.<b>m</b>ozilla.<b>o</b>rg&#41;](https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-json/)
 
 ## License
   > [GPLv2](http://www.gnu.org/licenses/gpl-2.0.txt)
