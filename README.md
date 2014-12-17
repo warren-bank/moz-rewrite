@@ -153,12 +153,12 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
     * `redirectTo(string_URI)`<br>
       hint: `window.location = string_URI`
 
-      > for an example, check out the [recipe: `redirect search engine queries from Yahoo to Google`](https://github.com/warren-bank/moz-rewrite/blob/data/recipe-book/request/redirect%20search%20engine%20queries%20from%20Yahoo%20to%20Google.js)
+      > for an example, check out the [recipe: `redirect search engine queries from Yahoo to Google`](https://github.com/warren-bank/moz-rewrite/blob/js/data/recipe-book/request/redirect%20search%20engine%20queries%20from%20Yahoo%20to%20Google.js)
 
     * `cancel()`<br>
       completely cancels the request
 
-      > for an example, check out the [recipe: `light weight ad-blocker`](https://github.com/warren-bank/moz-rewrite/blob/data/recipe-book/request/light%20weight%20ad-blocker.js)
+      > for an example, check out the [recipe: `light weight ad-blocker`](https://github.com/warren-bank/moz-rewrite/blob/js/data/recipe-book/request/light%20weight%20ad-blocker.js)
 
   * _response only_
 
@@ -287,7 +287,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 ## More Complicated Examples
 
 * a collection of various interesting rules and useful examples has been dubbed the _recipe book_
-* it can be found in its own branch of this repo, named: [_data/recipe-book_](https://github.com/warren-bank/moz-rewrite/tree/data/recipe-book)
+* it can be found in its own branch of this repo, named: [_js/data/recipe-book_](https://github.com/warren-bank/moz-rewrite/tree/js/data/recipe-book)
 * users are encouraged to contribute (via push request) additional _recipe_ examples
 
 ## User Preferences
@@ -370,10 +370,10 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
         > default: `-c -nd --content-disposition --no-http-keep-alive --no-check-certificate -e robots=off --progress=dot:binary`
 
     * _curl_:
-      > a reference implementation that adds support for this tool exists in a separate branch: [_replay/curl_](https://github.com/warren-bank/moz-rewrite/tree/replay/curl)
+      > a reference implementation that adds support for this tool exists in a separate branch: [_js/eval/replay/curl_](https://github.com/warren-bank/moz-rewrite/tree/js/eval/replay/curl)
 
-      > this hasn't been merged into the `master` branch due to a small incompatability, which is described pretty well across both:
-        * the [release notes for: v2.00](https://github.com/warren-bank/moz-rewrite/releases/tag/v2.00)
+      > this hasn't been merged into the `js/eval/master` branch due to a small incompatability, which is described pretty well across both:
+        * the [release notes for: js/eval/v2.00](https://github.com/warren-bank/moz-rewrite/releases/tag/js%2Feval%2Fv2.00)
         * the [commit message for: 32cb770](https://github.com/warren-bank/moz-rewrite/commit/32cb77021d295c8e037381cd6e85df52f9c0f236)
 
 ## Hidden Preferences
@@ -514,32 +514,38 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
     * if there are no functions, then there's no need to create the contextual variables that would normally be available (in scope) to functions;
     * when it's appropriate to do so, eliminating this step makes the performance cost (of processing the corresponding rules array data set) extremely low.
 
-## A fork that isn't a fork&hellip;
-##### a spoon, maybe?
+## Alternate Implementations / Branches
 
-[This spoon](https://github.com/warren-bank/moz-rewrite-amo) is for [AMO](https://addons.mozilla.org/en-US/firefox/addon/rewrite-http-headers/), as well as a specific subset of users.
+  * [`js/Cu.evalInSandbox/master`](https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master) (_default_):
+    * rule data files contain javascript, and are evaluated using the Mozilla `Cu.Sandbox` and `Cu.evalInSandbox` APIs
+    * security context: _null_ principal
+      * pros:
+        * should pass AMO review
+      * cons:
+        * gives up the ability to run protected code from within user-defined functions
 
-  * I made a [one-off fork](https://github.com/warren-bank/moz-rewrite-amo) (from [v1.01](https://github.com/warren-bank/moz-rewrite/tree/v1.01)) that is __so__ intentionally crippled that it doesn't even belong in this repo.
-  * The reason behind doing so was the desire to host a version on [AMO &#40;<b>a</b>ddons.<b>m</b>ozilla.<b>o</b>rg&#41;](https://addons.mozilla.org/en-US/firefox/addon/rewrite-http-headers/).
-  * The coding methodology that makes this tool so very powerful is, fundamentally, the strategic usage of the javascript `eval` statement.
-  * AMO doesn't accept/host addons that include `eval` for security related considerations.
-  * A subset of (less technical) users would probably never make use of any advanced scripting features.
-    This group would likely prefer a version that doesn't expose them to __any__ possible security risk.
+  * [`js/eval/master`](https://github.com/warren-bank/moz-rewrite/tree/js/eval/master):
+    * rule data files contain javascript, and are evaluated using the `eval()` function
+    * security context: _system_ principal
+      * pros:
+        * has the ability to run protected code from within user-defined functions
+      * cons:
+        * would (most likely) fail AMO review.<br>
+          for security related considerations, they have a general policy to disallow any addon that uses the `eval()` function.
 
-## Roadmap
+  * [`json/master`](https://github.com/warren-bank/moz-rewrite/tree/json/master):
+    * rule data files contain JSON, and are parsed using the native `JSON.parse()` function
+      * pros:
+        * would pass AMO review
+      * cons:
+        * gives up the ability to declare user-defined functions within the rules data sets
+        * gives up the ability to perform actions:
+          * that are conditional on the state of contextual variables
+          * that are only available through helper functions
 
-  * I may choose to update the `Sandbox` classes in this project to make use of the Mozilla `Cu.Sandbox` and `Cu.evalInSandbox` APIs
-    * pros:
-      * would (potentially) allow [moz-rewrite](https://github.com/warren-bank/moz-rewrite) to be hosted on AMO
-    * cons:
-      * the implementation of these Mozilla APIs appears to have been [broken since Firefox 17.0](https://bugzilla.mozilla.org/show_bug.cgi?id=1106165)
-      * I have mixed feelings about whether the reduced security risk would be worth giving up the ability to run protected code from within user-defined functions
-        * for some 3rd party to use this addon as a method of stealing information, they would need to:
-          * reconfigure the addon preferences
-          * store data files on local hard disk
-        * these changes would be simple to identify
-        * in order to make these changes, the machine would already need to be compromised&hellip;<br>
-          so what are we really saving?
+## AMO
+
+  * currently, [v1.03](https://github.com/warren-bank/moz-rewrite/releases/tag/json%2Fv1.03) of the [`json/master`](https://github.com/warren-bank/moz-rewrite/tree/json/master) branch is available on [AMO &#40;<b>a</b>ddons.<b>m</b>ozilla.<b>o</b>rg&#41;](https://addons.mozilla.org/en-US/firefox/addon/rewrite-http-headers/)
 
 ## License
   > [GPLv2](http://www.gnu.org/licenses/gpl-2.0.txt)
