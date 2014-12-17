@@ -134,6 +134,17 @@ screenshots        :
       <li>want the ability to <b>save()</b> and subsequently <i>replay</i> requests<ul>
         <li>resuming partial/incomplete file downloads
         <li>etc&hellip;</ul></ul></ul></ul>
+
+<strong>Update / Roadmap</strong>
+
+<ul>
+  <li>there's been movement/progress with the <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1106165">Mozilla bug report regarding the usage of the <b>Cu.Sandbox</b> and <b>Cu.evalInSandbox</b> APIs</a>
+  <li>in the very near future, I will be:<ul>
+    <li>merging the 2 existing repos as separate branches of a single repo (<a href="https://github.com/warren-bank/moz-rewrite"><i>moz-rewrite</i></a>)
+    <li>adding a new branch that refactors the code to make use of the <b>Cu.Sandbox</b> and <b>Cu.evalInSandbox</b> APIs, rather than the <b>eval()</b> statement</ul>
+  <li>after which:<ul>
+    <li>I will attempt to get the new branch of <i>moz-rewrite</i> hosted on AMO, which will have all of the features of the current (based on <b>eval()</b>) branch
+    <li>the other 2 branches (based on JSON, based on <b>eval()</b>) will still be available on github, though it's unlikely that they will continue to see active development</ul></ul>
 ------------------------------------------------------------------------------- Add-on Details: (continued)
 default locale     : English (US)
 homepage           : https://github.com/warren-bank/moz-rewrite-amo
