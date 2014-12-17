@@ -1,0 +1,151 @@
+-------------------------------------------------------------------------------
+
+https://addons.mozilla.org/en-US/firefox/addon/rewrite-http-headers/
+https://addons.mozilla.org/en-US/firefox/addon/rewrite-http-headers/versions/1.03
+https://addons.mozilla.org/firefox/downloads/file/287266/rewrite_http_headers-1.03-fx.xpi
+
+https://github.com/warren-bank/moz-rewrite/releases/tag/json%2Fv1.03
+https://github.com/warren-bank/moz-rewrite/releases/download/json%2Fv1.03/rewrite-http-headers.xpi
+
+release date       : December 5, 2014
+size               : 30.4 kB
+compatibility      : Firefox 4.0 and later
+
+------------------------------------------------------------------------------- Basic Information:
+name               : Rewrite HTTP Headers
+add-on URL         : rewrite-http-headers
+summary            : A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction
+categories         : ["Privacy & Security","Web Development"]
+tags               : header, headers, http, http headers, http request, http response
+------------------------------------------------------------------------------- Images:
+add-on icon        : ./chrome/skin/logo-64x64.png
+screenshots        :
+------------------------------------------------------------------------------- Add-on Details: description
+<strong>Summary</strong>
+
+<ul>
+  <li> Swiss Army knife for anyone interested in writing rules to intercept and conditionally modify HTTP traffic
+  <li> a distinct set of rules are written for each:<ul>
+    <li> (outbound) requests
+    <li> (inbound) responses</ul>
+  <li> rule sets are described using a JSON format
+  <li> rule sets are stored in external files, and specified by path
+  <li> paths may be specified relative to "special directories" to enable portability (see: <a href="https://github.com/warren-bank/moz-rewrite#user-content-comments--implementation-notes">documentation</a>)
+  <li> external rules files can (optionally) be watched for updates</ul>
+
+<strong>Data Structure</strong>
+
+<i>sample request rules data set:</i>
+<code>
+[
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url" : "^.*$",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"headers" : {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-01" : "Foo",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-02" : "Bar",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-03" : "Baz"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;},
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url" : "^https:",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"headers" : {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-01" : false,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-02" : false,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-03" : false
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"stop": true
+&nbsp;&nbsp;&nbsp;&nbsp;},
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url" : "^.*$",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"headers" : {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-01" : "Hello",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-03" : false
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+]
+</code>
+
+<i>sample response rules data set:</i>
+<code>
+[
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url" : "#(?:[^/,]+[/,])*(?:HTTP-Archive-Viewer|JSON-DataView)(?:[/,]|$)",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"headers" : {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"Content-Type"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: "application/json",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"Content-Disposition"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: null,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"Content-Security-Policy"&nbsp;&nbsp;&nbsp;: null,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Content-Security-Policy"&nbsp;: null
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+]
+</code>
+
+<i>notes: (general)</i>
+<ul>
+  <li> a rule set is an array of object
+  <li> each object represents a rule:<ul>
+    <li> the <b>url</b> attribute is a string storing a regular expression pattern
+    <li> the <b>headers</b> attribute is a hash object:<ul>
+      <li> each key represents the (case insensitive) name of an HTTP header
+      <li> each value indicates the intended action:<ul>
+        <li> a string will add/edit the value of the HTTP header
+        <li> a boolean <b>false</b> will undo any changes made by previous rules to the header.
+             it's important to realize that rules are applied incrementally and in order.
+             either until all rules have been processed, or until a matching rule is marked to be final.
+        <li> a <b>null</b> value will delete the header (if it was originally present)</ul></ul>
+    <li> the <b>stop</b> attribute is an optional boolean value.
+         when <b>true</b> and the rule's <b>url</b> pattern matches the requested URL, it signals that this rule is final and no subsequent rules should be processed.</ul></ul>
+
+<i>notes: (sample request)</i>
+<ul>
+  <li>analogous to: <a href="https://github.com/warren-bank/moz-rewrite#user-content-simple-examples">this <i>moz-rewrite</i> example</a>, which includes javascript comments</ul>
+
+<i>notes: (sample response)</i>
+<ul>
+  <li>analogous to: <a href="https://github.com/warren-bank/moz-rewrite/blob/data/recipe-book/response/disable%20CSP.js">a portion of this <i>moz-rewrite</i> recipe</a>
+  <li>mentioned as a solution to issue(s):<ul>
+    <li><a href="https://github.com/warren-bank/moz-harviewer/issues/1"><i>HTTP Archive Viewer</i> issue #1</a>
+    <li><a href="https://github.com/warren-bank/moz-json-data-view/issues/5#issuecomment-63533063"><i>JSON-DataView</i> issue #5</a>
+    <li><a href="https://github.com/warren-bank/moz-json-data-view/issues/7#issuecomment-64692997"><i>JSON-DataView</i> issue #7</a></ul></ul>
+
+<strong>Parent Project</strong>
+
+<ul>
+  <li>this project (<a href="https://github.com/warren-bank/moz-rewrite-amo"><i>Rewrite HTTP Headers</i></a>) is derived from a much more powerful addon project named: <a href="https://github.com/warren-bank/moz-rewrite"><i>moz-rewrite</i></a>
+  <li>the parent project (<a href="https://github.com/warren-bank/moz-rewrite"><i>moz-rewrite</i></a>) evaluates the rule data sets as javascript, rather than JSON<ul>
+    <li>the <b>headers</b> and <b>stop</b> attributes can be declared as user-defined functions, which are called per request/response and return data that is conditional on its current state
+    <li>the state of each request/response is collected into <a href="https://github.com/warren-bank/moz-rewrite#user-content-contextual-variables-in-scope-when-functions-are-called"><b>contextual variables</b></a> that are available and in-scope while user-defined functions are called
+    <li>a library of <a href="https://github.com/warren-bank/moz-rewrite#user-content-helper-functions-in-scope-when-functions-are-called"><b>helper functions</b></a> are also available and in-scope while user-defined functions are called
+    <li>this library includes the ability to <b>save()</b> a request, which includes all of its HTTP headers and POST data
+    <li>the UI includes a dialog window that displays all <i>saved</i> requests, and provides the ability to <i>replay</i> any subset of <i>saved</i> requests using a (supported) external download utility (ex: <i>wget</i>)</ul>
+  <li>the reason for creating this project (<a href="https://github.com/warren-bank/moz-rewrite-amo"><i>Rewrite HTTP Headers</i></a>) is to delete all of the code (in <a href="https://github.com/warren-bank/moz-rewrite"><i>moz-rewrite</i></a>) that is offensive to AMO, and would prevent it from being hosted<ul>
+    <li>much of its code and, consequently, functionality has been removed
+    <li>fundamentally, this boils down to the ability to evaluate user-defined javascript&hellip; and security concerns around doing so<ul>
+      <li>the parent project (<a href="https://github.com/warren-bank/moz-rewrite"><i>moz-rewrite</i></a>) makes strategic use of the javascript <b>eval()</b> statement
+      <li>an option that was considered is to use the Mozilla <b>Cu.Sandbox</b> and <b>Cu.evalInSandbox</b> APIs
+      <li>this option was rejected due to <a href="https://bugzilla.mozilla.org/show_bug.cgi?id=1106165">an apparent bug in the implementation of these APIs since Firefox 17.0</a></ul></ul>
+  <li>ultimately, the decision is left to the user<ul>
+    <li>this project (<a href="https://github.com/warren-bank/moz-rewrite-amo"><i>Rewrite HTTP Headers</i></a>) will likely suit your needs if you:<ul>
+      <li>only need the ability to modify HTTP headers using rules having the limited conditional granularity of pattern matching against the requested URL</ul>
+    <li>the parent project (<a href="https://github.com/warren-bank/moz-rewrite"><i>moz-rewrite</i></a>) will likely better suit your needs if you:<ul>
+      <li>know javascript
+      <li>want the ability to write conditional logic in user-defined functions within your rules data set(s)
+      <li>want the ability to <b>cancel()</b> or <b>redirectTo(<i>url</i>)</b> requests
+      <li>want the ability to <b>save()</b> and subsequently <i>replay</i> requests<ul>
+        <li>resuming partial/incomplete file downloads
+        <li>etc&hellip;</ul></ul></ul></ul>
+------------------------------------------------------------------------------- Add-on Details: (continued)
+default locale     : English (US)
+homepage           : https://github.com/warren-bank/moz-rewrite-amo
+------------------------------------------------------------------------------- Support Information:
+email              :
+website            :
+------------------------------------------------------------------------------- Technical Details:
+developer comments :
+required add-ons   :
+add-on flags       :
+view source?       : This add-on's source code is publicly viewable.
+public stats?      : No, this add-on's stats are not publicly viewable.
+UUID               : moz-rewrite-amo@warren-bank.github.com
+whiteboard         :
+-------------------------------------------------------------------------------
