@@ -6,7 +6,7 @@ var prefwindow = {
 		file_picker	= Components.classes["@mozilla.org/filepicker;1"].createInstance(fpClass);
 		file_picker.init(window, dialog_title, fpClass.modeOpen);
 
-		file_picker.appendFilter("javascript", "*.js; *.txt");
+		file_picker.appendFilter("json", "*.json; *.js; *.txt");
 
 		result		= file_picker.show();
 		if (result != fpClass.returnCancel){
