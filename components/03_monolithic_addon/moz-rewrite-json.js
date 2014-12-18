@@ -1,9 +1,9 @@
 /*
  * --------------------------------------------------------
  * project
- *     name:    moz-safe-rewrite
+ *     name:    Rewrite HTTP Headers (JSON)
  *     summary: Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily modifying HTTP headers in either direction
- *     url:     https://github.com/warren-bank/moz-rewrite-amo
+ *     url:     https://github.com/warren-bank/moz-rewrite/tree/json/master
  * author
  *     name:    Warren R Bank
  *     email:   warren.r.bank@gmail.com
@@ -58,7 +58,7 @@ var helper_functions = {
 	"get_prefs": function(sub_branch_name) {
 		var branch_name;
 
-		branch_name		= "extensions.Moz-Safe-Rewrite." + (sub_branch_name? sub_branch_name : '');
+		branch_name		= "extensions.Moz-Rewrite-JSON." + (sub_branch_name? sub_branch_name : '');
 
 		return Cc["@mozilla.org/preferences-service;1"]
 				.getService(Ci.nsIPrefService)
@@ -727,7 +727,7 @@ var HTTP_Response_Stream = HTTP_Stream.extend({
 function Moz_Rewrite() {
 	this.wrappedJSObject		= this;
 	this.prefs					= helper_functions.get_prefs();
-	this.log					= helper_functions.wrap_console_log('moz-safe-rewrite: ', false);
+	this.log					= helper_functions.wrap_console_log('Rewrite HTTP Headers (JSON): ', false);
 	this.debug					= null;
 	this.observers				= [];
 	this.HTTP_Request_Stream	= new HTTP_Request_Stream(false);
@@ -738,7 +738,7 @@ Moz_Rewrite.prototype = {
 
 	// properties required for XPCOM registration:
 	"classID"					: Components.ID("{1f5c019c-16d0-4c8e-a397-effac1253135}"),
-	"contractID"				: "@github.com/moz-rewrite-amo;1",
+	"contractID"				: "@github.com/moz-rewrite/json/master;1",
 	"classDescription"			: "A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction",
 
 	"_xpcom_factory"			: {
@@ -840,7 +840,7 @@ Moz_Rewrite.prototype = {
 	"at_startup":				function(){
 		var self = this;
 		try {
-			//self.debug = helper_functions.wrap_console_log('moz-safe-rewrite: ', ( self.prefs.getBoolPref("debug") == false ));
+			//self.debug = helper_functions.wrap_console_log('Rewrite HTTP Headers (JSON): ', ( self.prefs.getBoolPref("debug") == false ));
 
 			if (self.prefs.getBoolPref("request.enabled")){
 				OS.addObserver(self, "http-on-modify-request", false);

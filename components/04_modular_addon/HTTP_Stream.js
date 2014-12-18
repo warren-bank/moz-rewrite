@@ -1,9 +1,9 @@
 /*
  * --------------------------------------------------------
  * project
- *     name:    moz-safe-rewrite
+ *     name:    Rewrite HTTP Headers (JSON)
  *     summary: Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily modifying HTTP headers in either direction
- *     url:     https://github.com/warren-bank/moz-rewrite-amo
+ *     url:     https://github.com/warren-bank/moz-rewrite/tree/json/master
  * author
  *     name:    Warren R Bank
  *     email:   warren.r.bank@gmail.com
@@ -23,8 +23,8 @@ const Cc				= Components.classes;
 const Cu				= Components.utils;
 const Cr				= Components.results;
 
-Cu.import("resource://Moz-Safe-Rewrite/Class.js");
-Cu.import("resource://Moz-Safe-Rewrite/helper_functions.js");
+Cu.import("resource://Moz-Rewrite-JSON/Class.js");
+Cu.import("resource://Moz-Rewrite-JSON/helper_functions.js");
 
 Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://gre/modules/FileUtils.jsm");

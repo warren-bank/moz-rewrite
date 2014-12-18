@@ -1,5 +1,5 @@
-content Moz-Safe-Rewrite chrome/content/
-skin Moz-Safe-Rewrite hfskin chrome/skin/
+content Moz-Rewrite-JSON chrome/content/
+skin Moz-Rewrite-JSON hfskin chrome/skin/
 
 # =========================================================
 # update the leaf directory to test different variations
@@ -10,21 +10,21 @@ skin Moz-Safe-Rewrite hfskin chrome/skin/
 # =========================================================
 # example #1:
 # ===========
-# resource Moz-Safe-Rewrite components/03_monolithic_addon/
-# component {e741f03c-107a-472e-801d-c2481108037e} components/03_monolithic_addon/moz-safe-rewrite.js
+# resource Moz-Rewrite-JSON components/03_monolithic_addon/
+# component {e741f03c-107a-472e-801d-c2481108037e} components/03_monolithic_addon/moz-rewrite-json.js
 # =========================================================
 # example #2:
 # ===========
-# resource Moz-Safe-Rewrite components/04_modular_addon/
-# component {e741f03c-107a-472e-801d-c2481108037e} components/04_modular_addon/moz-safe-rewrite.js
+# resource Moz-Rewrite-JSON components/04_modular_addon/
+# component {e741f03c-107a-472e-801d-c2481108037e} components/04_modular_addon/moz-rewrite-json.js
 # =========================================================
 # active:
 # =======
-resource Moz-Safe-Rewrite components/04_modular_addon/
-component {e741f03c-107a-472e-801d-c2481108037e} components/04_modular_addon/moz-safe-rewrite.js
+resource Moz-Rewrite-JSON components/04_modular_addon/
+component {e741f03c-107a-472e-801d-c2481108037e} components/04_modular_addon/moz-rewrite-json.js
 # =========================================================
 
-contract @github.com/moz-rewrite-amo;1 {e741f03c-107a-472e-801d-c2481108037e}
-category profile-after-change Moz-Safe-Rewrite @github.com/moz-rewrite-amo;1
+contract @github.com/moz-rewrite/json/master;1 {e741f03c-107a-472e-801d-c2481108037e}
+category profile-after-change Moz-Rewrite-JSON @github.com/moz-rewrite/json/master;1
 
-locale Moz-Safe-Rewrite en-US chrome/locale/en-US/
+locale Moz-Rewrite-JSON en-US chrome/locale/en-US/

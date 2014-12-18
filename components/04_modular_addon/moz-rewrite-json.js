@@ -1,9 +1,9 @@
 /*
  * --------------------------------------------------------
  * project
- *     name:    moz-safe-rewrite
+ *     name:    Rewrite HTTP Headers (JSON)
  *     summary: Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily modifying HTTP headers in either direction
- *     url:     https://github.com/warren-bank/moz-rewrite-amo
+ *     url:     https://github.com/warren-bank/moz-rewrite/tree/json/master
  * author
  *     name:    Warren R Bank
  *     email:   warren.r.bank@gmail.com
@@ -24,16 +24,16 @@ const OS	= Cc['@mozilla.org/observer-service;1'].getService(Ci.nsIObserverServic
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-Cu.import("resource://Moz-Safe-Rewrite/helper_functions.js");
-Cu.import("resource://Moz-Safe-Rewrite/HTTP_Request_Stream.js");
-Cu.import("resource://Moz-Safe-Rewrite/HTTP_Response_Stream.js");
+Cu.import("resource://Moz-Rewrite-JSON/helper_functions.js");
+Cu.import("resource://Moz-Rewrite-JSON/HTTP_Request_Stream.js");
+Cu.import("resource://Moz-Rewrite-JSON/HTTP_Response_Stream.js");
 
 // ------------------------------------------------------------------------------------------------ "Moz_Safe_Rewrite" XPCOM component boilerplate
 
 function Moz_Safe_Rewrite() {
 	this.wrappedJSObject		= this;
 	this.prefs					= helper_functions.get_prefs();
-	this.log					= helper_functions.wrap_console_log('moz-safe-rewrite: ', false);
+	this.log					= helper_functions.wrap_console_log('Rewrite HTTP Headers (JSON): ', false);
 	this.debug					= null;
 	this.observers				= [];
 	this.HTTP_Request_Stream	= new HTTP_Request_Stream(false);
@@ -44,7 +44,7 @@ Moz_Safe_Rewrite.prototype = {
 
 	// properties required for XPCOM registration:
 	"classID"					: Components.ID("{e741f03c-107a-472e-801d-c2481108037e}"),
-	"contractID"				: "@github.com/moz-rewrite-amo;1",
+	"contractID"				: "@github.com/moz-rewrite/json/master;1",
 	"classDescription"			: "A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction",
 
 	"_xpcom_factory"			: {
@@ -146,7 +146,7 @@ Moz_Safe_Rewrite.prototype = {
 	"at_startup":				function(){
 		var self = this;
 		try {
-			//self.debug = helper_functions.wrap_console_log('moz-safe-rewrite: ', ( self.prefs.getBoolPref("debug") == false ));
+			//self.debug = helper_functions.wrap_console_log('Rewrite HTTP Headers (JSON): ', ( self.prefs.getBoolPref("debug") == false ));
 
 			if (self.prefs.getBoolPref("request.enabled")){
 				OS.addObserver(self, "http-on-modify-request", false);

@@ -2,17 +2,17 @@
 <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 	<Description about="urn:mozilla:install-manifest">
 		<em:id>moz-rewrite-amo@warren-bank.github.com</em:id>
-		<em:version>1.03</em:version>
+		<em:version>1.04</em:version>
 		<em:type>2</em:type>
 
-		<em:name>Rewrite HTTP Headers</em:name>
+		<em:name>Rewrite HTTP Headers (JSON)</em:name>
 		<em:description>A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction</em:description>
 		<em:creator>Warren Bank</em:creator>
-		<em:homepageURL>https://github.com/warren-bank/moz-rewrite-amo</em:homepageURL>
+		<em:homepageURL>https://github.com/warren-bank/moz-rewrite/tree/json/master</em:homepageURL>
 		<em:optionsType>1</em:optionsType>
-		<em:optionsURL>chrome://Moz-Safe-Rewrite/content/preferences_window.xul</em:optionsURL>
-		<em:iconURL>chrome://Moz-Safe-Rewrite/skin/logo-32x32.png</em:iconURL>
-		<em:icon64URL>chrome://Moz-Safe-Rewrite/skin/logo-64x64.png</em:icon64URL>
+		<em:optionsURL>chrome://Moz-Rewrite-JSON/content/preferences_window.xul</em:optionsURL>
+		<em:iconURL>chrome://Moz-Rewrite-JSON/skin/logo-32x32.png</em:iconURL>
+		<em:icon64URL>chrome://Moz-Rewrite-JSON/skin/logo-64x64.png</em:icon64URL>
 
 		<!-- Firefox -->
 		<em:targetApplication>
@@ -26,7 +26,7 @@
 		<em:localized>
 			<Description>
 				<em:locale>en-US</em:locale>
-				<em:name>Rewrite HTTP Headers</em:name>
+				<em:name>Rewrite HTTP Headers (JSON)</em:name>
 				<em:description>A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction</em:description>
 				<em:creator>Warren Bank</em:creator>
 			</Description>

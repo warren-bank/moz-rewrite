@@ -1,7 +1,7 @@
 @namespace url("http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul");
 
-#Moz-Safe-Rewrite-prefs,
-#Moz-Safe-Rewrite-pane {
+#Moz-Rewrite-JSON-prefs,
+#Moz-Rewrite-JSON-pane {
 	background-color:	#fff;
 	width:				500px;
 }

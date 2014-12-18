@@ -150,7 +150,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
 
 ## Hidden Preferences
 
-* `extensions.Moz-Safe-Rewrite.debug`
+* `extensions.Moz-Rewrite-JSON.debug`
   > default: `false`
 
   _boolean_
