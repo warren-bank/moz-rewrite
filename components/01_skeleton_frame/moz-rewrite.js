@@ -51,8 +51,8 @@ function Moz_Rewrite() {
 Moz_Rewrite.prototype = {
 
 	// properties required for XPCOM registration:
-	"classID"					: Components.ID("{1f5c019c-16d0-4c8e-a397-effac1253135}"),
-	"contractID"				: "@github.com/moz-rewrite;1",
+	"classID"					: Components.ID("{6929f616-1eaf-43ca-aeeb-1109026ebc0e}"),
+	"contractID"				: "@github.com/moz-rewrite/js/sandbox/nullprincipal;1",
 	"classDescription"			: "A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction",
 
 	"_xpcom_factory"			: {

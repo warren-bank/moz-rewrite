@@ -86,6 +86,15 @@ var helper_functions = {
 		return o1;
 	},
 
+	"get_object_keys": function(o){
+		var keys, key;
+		keys = [];
+		for (key in o){
+			keys.push(key);
+		}
+		return keys;
+	},
+
 	"get_object_summary": function(o1, raw){
 		var o2, key;
 		o2 = {};

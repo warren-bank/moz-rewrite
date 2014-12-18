@@ -24,11 +24,14 @@ const Cu				= Components.utils;
 const Cr				= Components.results;
 
 Cu.import("resource://Moz-Rewrite/Shared_Sandbox.js");
+Cu.import("resource://Moz-Rewrite/cu_sandbox.js");
 
 var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 
 	"init": function(){
 		this._super();
+
+		this.sandbox		= cu_sandbox['new']('Moz-Rewrite HTTP Request Sandbox', 'nullprincipal');
 
 		this.request		= null;
 		this.redirectTo		= null;

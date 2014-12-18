@@ -15,21 +15,21 @@ skin Moz-Rewrite hfskin chrome/skin/
 # example #1:
 # ===========
 # resource Moz-Rewrite components/03_monolithic_addon/
-# component {1f5c019c-16d0-4c8e-a397-effac1253135} components/03_monolithic_addon/moz-rewrite.js
+# component {6929f616-1eaf-43ca-aeeb-1109026ebc0e} components/03_monolithic_addon/moz-rewrite.js
 # =========================================================
 # example #2:
 # ===========
 # resource Moz-Rewrite components/04_modular_addon/
-# component {1f5c019c-16d0-4c8e-a397-effac1253135} components/04_modular_addon/moz-rewrite.js
+# component {6929f616-1eaf-43ca-aeeb-1109026ebc0e} components/04_modular_addon/moz-rewrite.js
 # =========================================================
 # active:
 # =======
 resource Moz-Rewrite components/04_modular_addon/
-component {1f5c019c-16d0-4c8e-a397-effac1253135} components/04_modular_addon/moz-rewrite.js
+component {6929f616-1eaf-43ca-aeeb-1109026ebc0e} components/04_modular_addon/moz-rewrite.js
 # =========================================================
 
-contract @github.com/moz-rewrite;1 {1f5c019c-16d0-4c8e-a397-effac1253135}
-category profile-after-change Moz-Rewrite @github.com/moz-rewrite;1
+contract @github.com/moz-rewrite/js/sandbox/nullprincipal;1 {6929f616-1eaf-43ca-aeeb-1109026ebc0e}
+category profile-after-change Moz-Rewrite @github.com/moz-rewrite/js/sandbox/nullprincipal;1
 
 locale Moz-Rewrite en-US chrome/locale/en-US/
 

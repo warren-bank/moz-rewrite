@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <RDF xmlns="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:em="http://www.mozilla.org/2004/em-rdf#">
 	<Description about="urn:mozilla:install-manifest">
-		<em:id>moz-rewrite@warren-bank.github.com</em:id>
-		<em:version>2.05</em:version>
+		<em:id>moz-rewrite-js@warren-bank.github.com</em:id>
+		<em:version>1.00</em:version>
 		<em:type>2</em:type>
 
-		<em:name>moz-rewrite</em:name>
+		<em:name>Rewrite HTTP Headers (JS)</em:name>
 		<em:description>A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction</em:description>
 		<em:creator>Warren Bank</em:creator>
-		<em:homepageURL>https://github.com/warren-bank/moz-rewrite</em:homepageURL>
+		<em:homepageURL>https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master</em:homepageURL>
 		<em:optionsType>1</em:optionsType>
 		<em:optionsURL>chrome://Moz-Rewrite/content/preferences_window.xul</em:optionsURL>
 		<em:iconURL>chrome://Moz-Rewrite/skin/logo-32x32.png</em:iconURL>
@@ -26,7 +26,7 @@
 		<em:localized>
 			<Description>
 				<em:locale>en-US</em:locale>
-				<em:name>moz-rewrite</em:name>
+				<em:name>Rewrite HTTP Headers (JS)</em:name>
 				<em:description>A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction</em:description>
 				<em:creator>Warren Bank</em:creator>
 			</Description>

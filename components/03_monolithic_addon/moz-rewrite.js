@@ -92,6 +92,15 @@ var helper_functions = {
 		return o1;
 	},
 
+	"get_object_keys": function(o){
+		var keys, key;
+		keys = [];
+		for (key in o){
+			keys.push(key);
+		}
+		return keys;
+	},
+
 	"get_object_summary": function(o1, raw){
 		var o2, key;
 		o2 = {};
@@ -182,6 +191,118 @@ var helper_functions = {
 		return usable;
 	}
 
+};
+
+// ------------------------------------------------------------------------------------------------ sandbox helper functions
+
+var cu_sandbox = {
+	"new": function(sandbox_name, principal_name){
+		var default_principal_name, principal, sandbox_options, sandbox;
+
+		default_principal_name	= 'nullprincipal';
+		principal_name			= principal_name? principal_name : default_principal_name;
+
+		try {
+			principal			= Cc["@mozilla.org/" + principal_name + ";1"].createInstance(Ci.nsIPrincipal);
+		}
+		catch(e){
+			throw new Error('Sandbox: bad principal');
+		}
+
+		sandbox_options			= {
+			"sandboxPrototype"		: {},
+			"wantXrays"				: false,
+			"wantComponents"		: false,
+			"wantExportHelpers"		: false,
+			"wantXHRConstructor"	: false,
+			"wantGlobalProperties"	: []
+		};
+
+		if (
+			(sandbox_name) &&
+			(typeof sandbox_name === 'string')
+		){
+			sandbox_options["sandboxName"] = sandbox_name;
+		}
+
+		sandbox					= new Cu.Sandbox(principal, sandbox_options);
+		return sandbox;
+	},
+
+	"add_object": function(sandbox, o, name){
+		// sanity check
+		if (typeof o !== 'object'){return;}
+
+		// special case
+		if (o === null){
+			sandbox[name] = o;
+			return;
+		}
+
+		if (typeof Cu.cloneInto === 'function'){
+			// Firefox >= 29.0
+			sandbox[name] = Cu.cloneInto(o, sandbox);
+		}
+		else if (typeof Cu.createObjectIn === 'function'){
+			// Firefox >= 8.0
+			sandbox[name] = Cu.createObjectIn(sandbox);
+
+			(function(){
+				var key;
+				for (key in o){
+					sandbox[name][key] = o[key];
+				}
+			})();
+
+			if (typeof Cu.makeObjectPropsNormal === 'function'){
+				Cu.makeObjectPropsNormal(sandbox[name]);
+			}
+		}
+		else {
+			// Firefox < 8.0
+			sandbox[name] = o;
+		}
+	},
+
+	"add_function": function(sandbox, f, name){
+		// sanity check
+		if (typeof f !== 'function'){return;}
+
+		if (typeof Cu.exportFunction === 'function'){
+			// Firefox >= 29.0
+			sandbox[name] = Cu.exportFunction(f, sandbox);
+		}
+		else {
+			// Firefox < 29.0
+			sandbox[name] = f;
+		}
+	},
+
+	"add_attributes": function(sandbox, local_variables){
+		var name, val;
+		for (name in local_variables){
+			val = local_variables[name];
+			switch(typeof val){
+				case 'object':
+					cu_sandbox.add_object(sandbox, val, name);
+					break;
+				case 'function':
+					cu_sandbox.add_function(sandbox, val, name);
+					break;
+				default:
+					sandbox[name] = val;
+					break;
+			}
+		}
+	},
+
+	"remove_attributes": function(sandbox, names){
+		var i, name;
+		for (i=0; i<names.length; i++){
+			name			= names[i];
+			sandbox[name]	= undefined;
+		}
+	}
 };
 
 // ------------------------------------------------------------------------------------------------ generic/minimal base class to assist with OO inheritance
@@ -283,8 +404,34 @@ var Class = (function(){
 var Base_Sandbox = Class.extend({
 
 	"init": function(){
-		this.log	= helper_functions.wrap_console_log(('Sandbox: '), false);
-		this.debug	= null;
+		this.log		= helper_functions.wrap_console_log(('Sandbox: '), false);
+		this.debug		= null;
+		this.sandbox	= null;		// abstract: Cu.Sandbox
+		this.cache		= null;
+
+		this.clear_cache();
+	},
+
+	"clear_cache": function(){
+		var self = this;
+
+		self.cache = {
+			"local_variables"	: null
+		};
+	},
+
+	"retrieve_local_variables": function(){
+		var self = this;
+		var local_variables;
+
+		if (self.cache.local_variables){
+			local_variables				= self.cache.local_variables;
+		}
+		else {
+			local_variables				= self.get_local_variables();
+			self.cache.local_variables	= local_variables;
+		}
+		return local_variables;
 	},
 
 	"get_local_variables": function(){
@@ -302,38 +449,28 @@ var Base_Sandbox = Class.extend({
 
 	"call": function(f, do_cleanup){
 		var self = this;
-		var code, result;
-
-		if (typeof f === 'function'){
-			code	= f.toSource() + '()';
-			self.debug() && self.debug('(call|checkpoint|01): ' + code);
-
-			result	= self.eval(code, do_cleanup);
-		}
-		else {
-			result	= null;
-		}
-		return result;
-	},
-
-	"eval": function(code, do_cleanup){
-		var self = this;
 		var result = null;
 
-		// want to execute (source) code while having arbitrary variables in the local scope
-		var local_variables, names, values, name, wrapper_function;
+		// sanity check
+		if (typeof f !== 'function'){return result;}
+
+		// want to execute function while having arbitrary variables in the local scope of the sandbox
+		var local_variables, random_name, code;
+
+		self.debug() && self.debug('(call|checkpoint|01): ' + f.toSource() + '()');
 
 		try {
-			local_variables = self.get_local_variables();
-			names	= [];
-			values	= [];
-			for (name in local_variables){
-				names.push(name);
-				values.push( local_variables[name] );
-			}
-			wrapper_function = '(function(' + names.join(',') + '){ return (' + code + '); })';
-			wrapper_function = eval( wrapper_function );
-			result = wrapper_function.apply(self, values);
+			local_variables = self.retrieve_local_variables();
+			random_name		= 'function_' + (function(size){return Math.floor(Math.random() * (Math.pow(10,size)));})(10);
+			code			= '(' + random_name + '()' + ')';
+
+			local_variables[random_name] = f;
+
+			cu_sandbox.add_attributes(self.sandbox, local_variables);
+			result	= Cu.evalInSandbox(code, self.sandbox);
+
+			local_variables[random_name] = undefined;
+			self.sandbox[random_name]    = undefined;
 		}
 		catch(e){
 			self.log('(call|error): ' + e.message);
@@ -345,7 +482,42 @@ var Base_Sandbox = Class.extend({
 		}
 	},
 
+	"eval": function(code, do_cleanup){
+		var self = this;
+		var result = null;
+
+		// sanity check
+		if (typeof code !== 'string'){return result;}
+
+		// want to execute code while having arbitrary variables in the local scope of the sandbox
+		var local_variables;
+
+		try {
+			local_variables = self.retrieve_local_variables();
+			code	= '(' + code + ')';
+
+			cu_sandbox.add_attributes(self.sandbox, local_variables);
+			result	= Cu.evalInSandbox(code, self.sandbox);
+		}
+		catch(e){
+			self.log('(eval|error): ' + e.message);
+			result = null;
+		}
+		finally {
+			if (do_cleanup) self.cleanup();
+			return result;
+		}
+	},
+
 	"cleanup": function(){
+		var self = this;
+		var local_variables, names;
+
+		local_variables = self.retrieve_local_variables();
+		names			= helper_functions.get_object_keys(local_variables);
+
+		cu_sandbox.remove_attributes(self.sandbox, names);
+		self.clear_cache();
 	}
 
 });
@@ -490,6 +662,8 @@ var HTTP_Request_Sandbox = Shared_Sandbox.extend({
 	"init": function(){
 		this._super();
 
+		this.sandbox		= cu_sandbox['new']('Moz-Rewrite HTTP Request Sandbox', 'nullprincipal');
+
 		this.request		= null;
 		this.redirectTo		= null;
 		this.cancel			= null;
@@ -526,6 +700,8 @@ var HTTP_Response_Sandbox = Shared_Sandbox.extend({
 
 	"init": function(){
 		this._super();
+
+		this.sandbox	= cu_sandbox['new']('Moz-Rewrite HTTP Response Sandbox', 'nullprincipal');
 
 		this.request	= null;
 		this.response	= null;
@@ -2067,8 +2243,8 @@ function Moz_Rewrite() {
 Moz_Rewrite.prototype = {
 
 	// properties required for XPCOM registration:
-	"classID"					: Components.ID("{1f5c019c-16d0-4c8e-a397-effac1253135}"),
-	"contractID"				: "@github.com/moz-rewrite;1",
+	"classID"					: Components.ID("{6929f616-1eaf-43ca-aeeb-1109026ebc0e}"),
+	"contractID"				: "@github.com/moz-rewrite/js/sandbox/nullprincipal;1",
 	"classDescription"			: "A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction",
 
 	"_xpcom_factory"			: {
