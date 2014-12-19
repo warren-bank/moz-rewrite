@@ -1,0 +1,491 @@
+-------------------------------------------------------------------------------
+
+https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-js/
+https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-js/versions/1.00
+https://addons.mozilla.org/firefox/downloads/file/289064/rewrite_http_headers_js-1.00-fx.xpi
+
+https://github.com/warren-bank/moz-rewrite/releases/tag/js%2FCu.evalInSandbox%2Fv1.00
+https://github.com/warren-bank/moz-rewrite/releases/download/js%2FCu.evalInSandbox%2Fv1.00/moz-rewrite-js.xpi
+
+release date       : December 18, 2014
+size               : 62.9 kB
+compatibility      : Firefox 4.0 and later
+
+------------------------------------------------------------------------------- Basic Information:
+name               : Rewrite HTTP Headers (JS)
+add-on URL         : moz-rewrite-js
+summary            : A light-weight (pseudo) rules-engine to easily modify HTTP headers in either direction
+categories         : ["Privacy & Security","Web Development"]
+tags               : header, headers, http, http headers, http request, http response, cancel, redirect, replay, wget
+------------------------------------------------------------------------------- Images:
+add-on icon        : ./chrome/skin/logo-64x64.png
+screenshots        :
+------------------------------------------------------------------------------- Add-on Details: description
+<strong>Summary</strong>
+
+<ul>
+  <li> Swiss Army knife for anyone interested in writing rules to intercept and conditionally modify HTTP traffic
+  <li> a distinct set of rules are written for each:<ul>
+    <li> (outbound) requests
+    <li> (inbound) responses</ul>
+  <li> rule sets are described using a Javascript format
+  <li> rule sets are stored in external files, and specified by path
+  <li> paths may be specified relative to "special directories" to enable portability (see: <a href="https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master#user-content-comments--implementation-notes">documentation</a>)
+  <li> external rules files can (optionally) be watched for updates
+  <li>rules can:<ul>
+    <li>add/edit/remove HTTP headers
+    <li>cancel the request
+    <li>redirect the request to a different URL
+    <li>save a record of the request</ul>
+  <li>saved requests can:<ul>
+    <li>be <i>replayed</i> using (supported) external download tools.
+        <i>replayed</i> requests include all the HTTP headers and POST data in the original/saved request.</ul></ul>
+
+<strong>Features</strong>
+
+<ul>
+  <li>regex patterns are used to match rules against the requested URL
+  <li>rules are applied incrementally, until either:<ul>
+    <li>all rules have been processed
+    <li>a rule is marked as being final</ul>
+  <li>rules are declared within a well-defined data structure.
+      this data isn't JSON; it is evaluated as javascript.
+      as such:<ul>
+    <li>all javascript data types are supported,
+        including those that aren't representable using JSON.
+        for example:<ul>
+          <li>comments
+          <li>regex patterns<ul>
+            <li>literal (ie: perl) notation: <code>//</code>
+            <li>object constructor: <code>new RegExp('')</code></ul>
+          <li>functions</ul>
+    <li>the declaration for the data structure can contain inline code,
+        which is interpolated only once during evaluation,
+        immediately after the data file is initially read from disk.
+        for example:<ul>
+          <li>storing the output of a helper function as (part of) a static value
+          <li>calling an "immediately-invoked function expression" (aka: "self-executing anonymous function"), and storing its output as (part of) a static value</ul></ul>
+  <li>where a function is present, it will be called each time the rule is evaluated.<ul>
+    <li>rules are evaluated for every request and/or response.
+    <li>when functions are called, there will be contextual variables as well as helper functions in scope.
+    <li>the contextual variables will allow the function to return a value that is dependent upon the state of the request/response.
+    <li>the helper functions provide a library to perform tasks that:<ul>
+      <li>are commonly used to generate HTTP header values
+      <li>provide enhanced capabilities, unrelated to modifying HTTP header values</ul></ul>
+  <li>where inline javascript code is present, the javascript will only be evaluated once.<ul>
+    <li>this occurs when the rules are read from an external file and evaluated into a javascript array of rule objects.
+    <li>when this evaluation occurs, there is no contextual request or response.. so there are no contextual variables in scope.
+    <li>however, the same helper functions that are always available to functions (that are defined within the rules data set) will also be available at the time that the rules data set is initialized/evaluated.</ul></ul>
+
+<strong>Contextual Variables (in scope when functions are called)</strong>
+
+<ul>
+  <li><em>both requests and responses</em><ul>
+    <li><code>request.window_location</code> = {}
+      keys:<ul>
+      <li><code>href</code>: [string] full URI
+      <li><code>protocol</code>: [string]
+        for example:<ul>
+        <li><code>http:</code>
+        <li><code>https:</code>
+        <li><code>file:</code></ul>
+      <li><code>username</code>: [string]
+      <li><code>password</code>: [string]
+      <li><code>host</code>: [string]
+      <li><code>port</code>: [string]
+      <li><code>path</code>: [string]
+      <li><code>query</code>: [string]
+      <li><code>hash</code>: [string]
+      <li><code>file_ext</code>: [string]</ul>
+    <li><code>request.uri</code> = {}
+      <blockquote>same keys as: <code>request.window_location</code></blockquote>
+    <li><code>request.original_uri</code> = {}
+      <blockquote>same keys as: <code>request.window_location</code></blockquote>
+    <li><code>request.referrer</code> = {}
+      <blockquote>same keys as: <code>request.window_location</code></blockquote>
+    <li><code>request.method</code> [string]
+    <li><code>request.headers</code> = {}
+    <li><code>request.headers.unmodified</code> = {}
+      hash of all HTTP headers in original/unmodified request
+    <li><code>request.headers.updated</code> = {}
+      hash of all HTTP headers that the rules array data set (for requests) has incrementally modified at the current point of rules processing.<ul>
+      <li>this hash is empty before any rules are processed.
+      <li>as rules are processed in sequential order, any rule that matches the requested URL may specify updated HTTP headers which will be applied to this hash object.
+      <li>when rule processing is completed, the final state of this hash will be applied to the HTTP request.<ul>
+        <li>a <code>string</code> value will set/update the HTTP header corresponding to its hash key.
+        <li>a <code>boolean</code> <strong>false</strong> value will be ignored.
+        <li>a <strong>null</strong> value will remove the HTTP header corresponding to its hash key (if originally present).</ul></ul></ul>
+  <li><em>request only</em>
+  <li><em>response only</em><ul>
+    <li><code>response.headers</code> = {}
+    <li><code>response.headers.unmodified</code> = {}
+      hash of all HTTP headers in original/unmodified response
+    <li><code>response.headers.updated</code> = {}
+      hash of all HTTP headers that the rules array data set (for responses) has incrementally modified at the current point of rules processing.
+      <blockquote>see additional notes under: <code>request.headers.updated</code></blockquote>
+    <li><code>response.status_code</code> [integer]
+    <li><code>response.charset</code> [string]
+    <li><code>response.content_length</code> [integer]
+    <li><code>response.content_type</code> [string]</ul></ul>
+
+<strong>Helper Functions (in scope when functions are called)</strong>
+
+<ul>
+  <li><em>always available</em><ul>
+    <li><code>atob(string_base64_encoded)</code>
+      decodes a string of data which has been encoded using base-64 encoding.
+    <li><code>base64_decode(string_base64_encoded)</code>
+      <blockquote>alias for: <code>atob</code></blockquote>
+    <li><code>btoa(string_value)</code>
+      creates a base-64 encoded ASCII string from a "string" of binary data.
+    <li><code>base64_encode(string_value)</code>
+      <blockquote>alias for: <code>btoa</code></blockquote>
+    <li><code>md2(string_value)</code>
+      returns the result of hashing the input string using the <code>md2</code> crypto hash function
+    <li><code>md5(string_value)</code>
+      returns the result of hashing the input string using the <code>md5</code> crypto hash function
+    <li><code>sha1(string_value)</code>
+      returns the result of hashing the input string using the <code>sha1</code> crypto hash function
+    <li><code>sha256(string_value)</code>
+      returns the result of hashing the input string using the <code>sha256</code> crypto hash function
+    <li><code>sha384(string_value)</code>
+      returns the result of hashing the input string using the <code>sha384</code> crypto hash function
+    <li><code>sha512(string_value)</code>
+      returns the result of hashing the input string using the <code>sha512</code> crypto hash function</ul>
+  <li><em>both requests and responses</em><ul>
+    <li><code>save()</code>
+      prepends a record of the current request to the <code>Output File</code>.
+      this record will be available for <em>replay</em> via the <strong><em>view/replay saved requests</em></strong> dialog window.</ul>
+  <li><em>request only</em><ul>
+    <li><code>redirectTo(string_URI)</code>
+      <blockquote>hint: <code>window.location = string_URI</code></blockquote>
+      <blockquote>for an example, check out the <a href="https://github.com/warren-bank/moz-rewrite/blob/js/data/recipe-book/request/redirect%20search%20engine%20queries%20from%20Yahoo%20to%20Google.js">recipe: <code>redirect search engine queries from Yahoo to Google</code></a></blockquote>
+    <li><code>cancel()</code>
+      completely cancels the request
+      <blockquote>for an example, check out the <a href="https://github.com/warren-bank/moz-rewrite/blob/js/data/recipe-book/request/light%20weight%20ad-blocker.js">recipe: <code>light weight ad-blocker</code></a></blockquote></ul>
+  <li><em>response only</em></ul>
+
+<strong>Data Structure</strong>
+
+<ul>
+  <li>the same data structure (schema) applies to both requests and responses
+  <li>request and response data are defined separately
+  <li>the data structure is an array of objects, where each object represents a rule.
+  <li>each rule can have the following attributes:<ul>
+    <li><code>url</code> (required, <code>RegExp</code>)
+    <li><code>headers</code> (required, <code>object</code> or <code>function</code>):<ul>
+      <li>key = name of HTTP header
+      <li>value = determines what action to take<ul>
+        <li>[<code>string</code>]:
+          new value of HTTP header
+        <li>[<code>boolean</code>, value === <strong>false</strong>]:
+          ignore all previous rules for this HTTP header,
+          and leave the original value unmodified
+        <li>[<code>object</code>, value === <strong>null</strong>]:
+          remove HTTP header from request/response</ul></ul>
+    <li><code>stop</code> (optional, <code>boolean</code> or <code>function</code>):
+      when:<ul>
+      <li>the <code>url</code> pattern of this rule matches the requested URL, <em>and</em>
+      <li>processing of this rule is complete</ul>
+      then:<ul>
+      <li>[<strong>false</strong>, default]: process next rule (in array)
+      <li>[<strong>true</strong>]: do not process any additional rules</ul></ul>
+  <li>while each request/response is processed by its corresponding rules data set,
+    when a <code>url</code> pattern match occurs for a rule,
+    when either the <code>headers</code> or <code>stop</code> attribute of the matching rule object is declared as a javascript function:<ul>
+    <li>contextual variables will be constructed and made availabe to the function that will convey information about the particular request/response being processed.
+    <li>the function is expected to return the proper data type; otherwise, its output will be ignored.</ul>
+  <li>while rules are being processed, an internal list of updates is being created and incrementally updated.
+  <li>when the processing of rules is complete, this internal list of updates are applied to the request/response.</ul>
+
+<strong>Simple Examples</strong>
+
+<ul><li>sample <i>request</i> rule(s):</ul>
+<code>
+[
+&nbsp;&nbsp;&nbsp;&nbsp;/* ****************************************************
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* all requests: add 3 custom headers
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* ****************************************************
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url" : /^.*$/,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"headers" : {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-01" : "Foo",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-02" : "Bar",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-03" : "Baz"
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;},
+&nbsp;&nbsp;&nbsp;&nbsp;/* ****************************************************
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* secure requests: cancel the 3 custom headers, and stop processing rules
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* ****************************************************
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url" : /^https/i,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"headers" : {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-01" : false,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-02" : false,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-03" : false
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"stop": true
+&nbsp;&nbsp;&nbsp;&nbsp;},
+&nbsp;&nbsp;&nbsp;&nbsp;/* ****************************************************
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* all requests: update 1st custom header, cancel 3rd custom header
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* ****************************************************
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url" : /^.*$/,
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"headers" : {
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-01" : "Hello",
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"X-Custom-Sample-Header-03" : false
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;/* ****************************************************
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* assertion #1: non-secure URL request
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* expected result:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;X-Custom-Sample-Header-01: Hello
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;X-Custom-Sample-Header-02: Bar
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* ****************************************************
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+]
+</code>
+
+<ul><li>sample <i>response</i> rule(s):</ul>
+<code>
+[
+&nbsp;&nbsp;&nbsp;&nbsp;/* ****************************************************
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* purpose: map an applicable 'content-type' to a finite set of resources
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;as identified by file extension, when loaded from local hard disk.
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;* ****************************************************
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*/
+&nbsp;&nbsp;&nbsp;&nbsp;{
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"url" : new RegExp('^file://', 'i'),
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"headers" : function(){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;var $headers = {};
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;switch( request.uri.file_ext.toLowerCase() ){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case 'txt':
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$headers['content-type'] = 'text/plain';
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case 'css':
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$headers['content-type'] = 'text/css';
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case 'js':
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$headers['content-type'] = 'application/javascript';
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case 'json':
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$headers['content-type'] = 'application/json';
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;break;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;if ( $headers['content-type'] ){
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;response.content_type = $headers['content-type'];
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;}
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return $headers;
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;},
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"stop": true
+&nbsp;&nbsp;&nbsp;&nbsp;}
+]
+</code>
+
+<strong>More Complicated Examples</strong>
+
+<ul>
+  <li>a collection of various interesting rules and useful examples has been dubbed the <em>recipe book</em>
+  <li>it can be found in its own branch of this repo, named: <a href="https://github.com/warren-bank/moz-rewrite/tree/js/data/recipe-book"><em>js/data/recipe-book</em></a>
+  <li>users are encouraged to contribute (via push request) additional <em>recipe</em> examples</ul>
+
+<strong>User Preferences</strong>
+
+<ul>
+  <li><strong>input: rules data</strong><ul>
+    <li><em>HTTP Requests (outbound)</em>:<ul>
+      <li>Enabled
+        <blockquote>default: on</blockquote>
+
+        on/off toggle<ul>
+        <li>on:intercept <em>HTTP Requests</em> and apply its corresponding set of rules
+        <li>off:disable this feature entirely</ul>
+      <li>Path to Rules File
+        <blockquote>default: ''</blockquote>
+        <blockquote>refer to <a href="https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master#user-content-comments--implementation-notes"><strong>Comments / Implementation Notes</strong></a> for advanced usage</blockquote>
+      <li>Watch Interval (ms, 0 to disable)
+        <blockquote>default: <code>0</code> (off)</blockquote>
+
+        useful while writing/testing new rules.
+        this feature will watch the rules file for changes, and reload its contents as needed.</ul>
+    <li><em>HTTP Responses (inbound)</em>:<ul>
+      <li>Enabled
+        <blockquote>default: on</blockquote>
+
+        on/off toggle<ul>
+        <li>on:intercept <em>HTTP Responses</em> and apply its corresponding set of rules
+        <li>off:disable this feature entirely</ul>
+      <li>Path to Rules File
+        <blockquote>default: ''</blockquote>
+        <blockquote>refer to <a href="https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master#user-content-comments--implementation-notes"><strong>Comments / Implementation Notes</strong></a> for advanced usage</blockquote>
+      <li>Watch Interval (ms, 0 to disable)
+        <blockquote>default: <code>0</code> (off)</blockquote>
+
+        useful while writing/testing new rules.
+        this feature will watch the rules file for changes, and reload its contents as needed.</ul></ul>
+  <li><strong>output: <em>save()</em></strong><ul>
+    <li><em>HTTP Request Persistence</em>:<ul>
+      <li>Enabled
+        <blockquote>default: on</blockquote>
+
+        on/off toggle<ul>
+        <li>on:the <code>save()</code> helper function will save a record of the request to <code>Output File</code>
+        <li>off:disable this feature entirely</ul>
+      <li>Path to Output File
+        <blockquote>default: ''</blockquote>
+        <blockquote>refer to <a href="https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master#user-content-comments--implementation-notes"><strong>Comments / Implementation Notes</strong></a> for advanced usage</blockquote>
+      <li>Maximum Number of Saved Requests
+        <blockquote>default: <code>10</code></blockquote>
+
+        this feature is intended to prevent the <code>Output File</code> from growing too large<ul>
+        <li><code>&gt; 0</code>:
+          when a request record is saved to <code>Output File</code>, the data is prepended. If after this addition there are more records stored in the file (ie: <code>N</code>) than the specified maximum number of records (ie: <code>X</code>), then only the first <code>X</code> are retained&hellip; and the trailing <code>(N-X)</code> are removed.
+        <li><code>0</code>:
+          allow the file to grow without any limitation.</ul></ul></ul>
+  <li><strong>tools to <em>replay</em> saved requests</strong><ul>
+    <li><em>common settings</em>:<ul>
+      <li>Path to Download Directory
+        <blockquote>default: <code>{DfltDwnld}</code></blockquote>
+        <blockquote>refer to <a href="https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master#user-content-comments--implementation-notes"><strong>Comments / Implementation Notes</strong></a> for advanced usage</blockquote></ul>
+    <li><em>wget</em>:<ul>
+      <li>Path to <code>wget</code> executable
+        <blockquote>default: <code>/usr/bin/wget</code></blockquote>
+        <blockquote>refer to <a href="https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master#user-content-comments--implementation-notes"><strong>Comments / Implementation Notes</strong></a> for advanced usage</blockquote>
+      <li>Command-Line Options for <code>wget</code> executable
+        <blockquote>default: <code>-c -nd --content-disposition --no-http-keep-alive --no-check-certificate -e robots=off --progress=dot:binary</code></blockquote></ul>
+    <li><em>curl</em>:
+      <blockquote>a reference implementation that adds support for this tool exists in a separate branch: <a href="https://github.com/warren-bank/moz-rewrite/tree/js/eval/replay/curl"><em>js/eval/replay/curl</em></a></blockquote>
+      <blockquote>this hasn't been merged into the <code>js/eval/master</code> branch due to a small incompatability, which is described pretty well across both:</blockquote><ul>
+      <li>the <a href="https://github.com/warren-bank/moz-rewrite/releases/tag/js%2Feval%2Fv2.00">release notes for: js/eval/v2.00</a>
+      <li>the <a href="https://github.com/warren-bank/moz-rewrite/commit/32cb77021d295c8e037381cd6e85df52f9c0f236">commit message for: 32cb770</a></ul></ul></ul>
+
+<strong>Hidden Preferences</strong>
+
+<ul>
+  <li><code>extensions.Moz-Rewrite.debug</code>
+    <blockquote>default: <code>false</code></blockquote>
+
+    <em>boolean</em><ul>
+    <li><code>true</code>:
+      enables debug log messages to be printed to the <code>Browser Console</code>
+    <li><code>false</code>:
+      suppresses these log messages</ul>
+  <li><code>extensions.Moz-Rewrite.case_sensitive</code>
+    <blockquote>default: <code>false</code></blockquote>
+
+    <em>boolean</em><ul>
+    <li><code>true</code>:
+      the alphabetic case of the URL and its components are preserved
+    <li><code>false</code>:
+      the URL and its components are always normalized to lowercase, which allows regex patterns to be written in lowercase and omit a <em>case insensitive</em> flag</ul></ul>
+
+<strong>Dialog Windows</strong>
+
+<ul>
+  <li><code>Tools -&gt; moz-rewrite -&gt; user preferences</code><ul>
+    <li>same <code>Options</code> dialog as:<ul>
+      <li><code>Tools -&gt; Add-ons</code><ul>
+        <li><code>Extensions</code><ul>
+          <li><code>moz-rewrite -&gt; Options</code></ul></ul></ul>
+    <li>provides a graphical interface for the user to apply changes to the values of (non-hidden / user) addon preferences</ul>
+  <li><code>Tools -&gt; moz-rewrite -&gt; view/replay saved requests</code><ul>
+    <li><em>saved HTTP Requests</em>:<ul>
+      <li>list of all saved requests.
+        for each, a checkbox is followed by the corresponding URL.</ul>
+    <li>common form field controls<ul>
+      <li><em>replay selected requests using..</em>
+        <blockquote>
+          button that displays a list of all supported download tools.
+          this list currently contains:<ul>
+          <li>wget</ul>
+        </blockquote>
+      <li><em>interactively identify each partial/incomplete download file</em>
+        <blockquote>
+          checkbox that<ul>
+          <li>when:<ul>
+            <li>one or more <em>saved HTTP Requests</em> are selected
+            <li>a download tool is chosen/activated from the list</ul>
+          <li>if <code>checked</code>:<ul>
+            <li>for each of the selected <em>saved HTTP Requests</em>, an interactive <code>file picker</code> dialog will open and allow the user to choose the file path for the download.<ul>
+              <li>this workflow allows using the external download tool to be used to save data to arbitrary paths within the filesystem,
+                rather than only to the <code>Download Directory</code>.
+              <li>this is particularly useful for when the browser begins a download, but fails to complete.
+                in such a case,<ul>
+                <li>if the request was saved&hellip;
+                  or if the browser can re-request the download, and this subsequent request is saved&hellip;
+                  without actually saving the file, and certainly <strong>NOT</strong> over writing the previously downloaded partial/incomplete file
+                <li>then the interactive dialog would allow the user to browse for this partial/incomplete file download</ul></ul></ul>
+          <li>if not <code>checked</code>:<ul>
+            <li>for each of the selected <em>saved HTTP Requests</em>, the chosen download tool will begin saving/resuming the requested data.<ul>
+              <li>this data will be saved to a file in the <code>Download Directory</code>
+              <li>the filename will be determined by the external download tool.
+                factors that the tool may take into consideration:<ul>
+                <li>a filename component of the requested URL
+                <li>a 'content-disposition' header of the response
+                <li>command-line options for the tool (in addon preferences)</ul></ul></ul></ul>
+        </blockquote>
+      <li><em>fallback behavior when 'cancel' is chosen in interactive dialog</em>
+        <blockquote>
+          checkbox that<ul>
+          <li>when:<ul>
+            <li><em>interactively identify each partial/incomplete download file</em> is <code>checked</code>
+            <li>an interactive <code>file picker</code> dialog is closed by the user without having selected a filepath<ul>
+              <li><code>cancel</code> button
+              <li><code>close window</code> (ie: "X") button</ul></ul>
+          <li>if <code>checked</code>:<ul>
+            <li>proceed with download and save to default directory</ul>
+          <li>if not <code>checked</code>:<ul>
+            <li>skip <em>replay</em> of the specific saved request</ul></ul>
+        </blockquote></ul></ul></ul>
+
+<strong>Alternate Variation</strong>
+
+<ul>
+  <li>the <a href="https://github.com/warren-bank/moz-rewrite"><i>moz-rewrite</i> project</a> has several branches.
+      Each contains an alternate variation that follows a different implementation methodology.
+      Two of which are intended for distribution here, on AMO:<ul>
+    <li>(<i>alternate variation</i>)
+        <a href="https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-json"><i>moz-rewrite-json</i></a> requires that the user defined rules data be format in JSON
+    <li>(<i>current page</i>)
+      <a href="https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-js"><i>moz-rewrite-js</i></a> allows the user defined rules data to be format in Javascript<ul>
+      <li>the <b>headers</b> and <b>stop</b> attributes can be declared as user-defined functions, which are called per request/response and return data that is conditional on its current state
+      <li>the state of each request/response is collected into <a href="https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master#user-content-contextual-variables-in-scope-when-functions-are-called"><b>contextual variables</b></a> that are available and in-scope while user-defined functions are called
+      <li>a library of <a href="https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master#user-content-helper-functions-in-scope-when-functions-are-called"><b>helper functions</b></a> are also available and in-scope while user-defined functions are called
+      <li>this library includes the ability to:<ul>
+        <li><b>cancel()</b> a request
+        <li><b>redirectTo(<i>url</i>)</b> a request
+        <li><b>save()</b> a request, which includes all of its HTTP headers and POST data</ul>
+      <li>the UI includes a dialog window that displays all <i>saved</i> requests, and provides the ability to <i>replay</i> any subset of <i>saved</i> requests using a (supported) external download utility (ex: <i>wget</i>)<ul>
+        <li>resume partial/incomplete file downloads
+        <li>etc&hellip;</ul></ul></ul></ul>
+------------------------------------------------------------------------------- Add-on Details: (continued)
+default locale     : English (US)
+homepage           : https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master
+------------------------------------------------------------------------------- Support Information:
+email              :
+website            : https://github.com/warren-bank/moz-rewrite/issues
+------------------------------------------------------------------------------- Technical Details: developer comments
+When posting an issue on github, please indicate the branch of this addon that you are using.
+
+There are currently 3 variations:<ul>
+  <li>user defined data rules are format in JSON, and parsed with <b>JSON.parse()</b><ul>
+    <li>AMO: <a href="https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-json"><i>moz-rewrite-json</i></a>
+    <li>github branch: <a href="https://github.com/warren-bank/moz-rewrite/tree/json/master"><i>json/master</i></a></ul>
+  <li>(<i>current page</i>)
+    user defined data rules are format in Javascript, and evaluated with <b>Cu.evalInSandbox()</b><ul>
+    <li>AMO: <a href="https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-js"><i>moz-rewrite-js</i></a>
+    <li>github branch: <a href="https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master"><i>js/Cu.evalInSandbox/master</i></a></ul>
+  <li>user defined data rules are format in Javascript, and evaluated with <b>eval()</b><ul>
+    <li>AMO: <b>N/A</b>
+    <li>github branch: <a href="https://github.com/warren-bank/moz-rewrite/tree/js/eval/master"><i>js/eval/master</i></a></ul></ul>
+------------------------------------------------------------------------------- Technical Details: (continued)
+required add-ons   :
+add-on flags       :
+view source?       : This add-on's source code is publicly viewable.
+public stats?      : No, this add-on's stats are not publicly viewable.
+UUID               : moz-rewrite-js@warren-bank.github.com
+whiteboard         :
+-------------------------------------------------------------------------------

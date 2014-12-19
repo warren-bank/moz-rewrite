@@ -543,9 +543,10 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
           * that are conditional on the state of contextual variables
           * that are only available through helper functions
 
-## AMO
+## AMO <sub>(<b>a</b>ddons.<b>m</b>ozilla.<b>o</b>rg)</sub>
 
-  * currently, [v1.03](https://github.com/warren-bank/moz-rewrite/releases/tag/json%2Fv1.03) of the [`json/master`](https://github.com/warren-bank/moz-rewrite/tree/json/master) branch is available on [AMO &#40;<b>a</b>ddons.<b>m</b>ozilla.<b>o</b>rg&#41;](https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-json/)
+  * [v1.03](https://github.com/warren-bank/moz-rewrite/releases/tag/json%2Fv1.03) of the [`json/master`](https://github.com/warren-bank/moz-rewrite/tree/json/master) branch is available on [AMO](https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-json/)
+  * [v1.00](https://github.com/warren-bank/moz-rewrite/releases/tag/js%2FCu.evalInSandbox%2Fv1.00) of the [`js/Cu.evalInSandbox/master`](https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master) branch is pending review on [AMO](https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-js/)
 
 ## License
   > [GPLv2](http://www.gnu.org/licenses/gpl-2.0.txt)
