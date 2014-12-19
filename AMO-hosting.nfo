@@ -301,8 +301,10 @@ screenshots        :
         <blockquote>default: on</blockquote>
 
         on/off toggle<ul>
-        <li>on:intercept <em>HTTP Requests</em> and apply its corresponding set of rules
-        <li>off:disable this feature entirely</ul>
+        <li>on:
+          intercept <em>HTTP Requests</em> and apply its corresponding set of rules
+        <li>off:
+          disable this feature entirely</ul>
       <li>Path to Rules File
         <blockquote>default: ''</blockquote>
         <blockquote>refer to <a href="https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master#user-content-comments--implementation-notes"><strong>Comments / Implementation Notes</strong></a> for advanced usage</blockquote>
@@ -316,8 +318,10 @@ screenshots        :
         <blockquote>default: on</blockquote>
 
         on/off toggle<ul>
-        <li>on:intercept <em>HTTP Responses</em> and apply its corresponding set of rules
-        <li>off:disable this feature entirely</ul>
+        <li>on:
+          intercept <em>HTTP Responses</em> and apply its corresponding set of rules
+        <li>off:
+          disable this feature entirely</ul>
       <li>Path to Rules File
         <blockquote>default: ''</blockquote>
         <blockquote>refer to <a href="https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master#user-content-comments--implementation-notes"><strong>Comments / Implementation Notes</strong></a> for advanced usage</blockquote>
@@ -332,8 +336,10 @@ screenshots        :
         <blockquote>default: on</blockquote>
 
         on/off toggle<ul>
-        <li>on:the <code>save()</code> helper function will save a record of the request to <code>Output File</code>
-        <li>off:disable this feature entirely</ul>
+        <li>on:
+          the <code>save()</code> helper function will save a record of the request to <code>Output File</code>
+        <li>off:
+          disable this feature entirely</ul>
       <li>Path to Output File
         <blockquote>default: ''</blockquote>
         <blockquote>refer to <a href="https://github.com/warren-bank/moz-rewrite/tree/js/Cu.evalInSandbox/master#user-content-comments--implementation-notes"><strong>Comments / Implementation Notes</strong></a> for advanced usage</blockquote>
