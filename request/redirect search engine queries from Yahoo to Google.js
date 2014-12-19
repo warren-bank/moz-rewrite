@@ -10,7 +10,6 @@
             search_term     = search_term[1];
             string_url      = 'https://www.google.com/search?q=' + search_term;
 
-            self.log('redirecting to: ' + string_url);
             redirectTo(string_url);
             return {};
         }
