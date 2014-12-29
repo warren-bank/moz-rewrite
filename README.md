@@ -18,6 +18,10 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
   * be _replayed_ using (supported) external download tools.<br>
     _replayed_ requests include all the HTTP headers and POST data in the original/saved request.
 
+## Video Tutorial
+
+[2+ hour long screencast](https://www.youtube.com/watch?v=l8uIiiVo1yw) that is a detailed walk-through of installation, configuration and usage
+
 ## Features
 
 * regex patterns are used to match rules against the requested URL
