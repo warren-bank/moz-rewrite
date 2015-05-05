@@ -38,7 +38,6 @@ var cu_sandbox = {
 		}
 
 		sandbox_options			= {
-			"sandboxPrototype"		: {},
 			"wantXrays"				: false,
 			"wantComponents"		: false,
 			"wantExportHelpers"		: false,

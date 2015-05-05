@@ -1,13 +1,12 @@
 -------------------------------------------------------------------------------
 
 https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-js/
-https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-js/versions/1.00
-https://addons.mozilla.org/firefox/downloads/file/289064/rewrite_http_headers_js-1.00-fx.xpi
+https://addons.mozilla.org/en-US/firefox/addon/moz-rewrite-js/versions/1.01
 
-https://github.com/warren-bank/moz-rewrite/releases/tag/js%2FCu.evalInSandbox%2Fv1.00
-https://github.com/warren-bank/moz-rewrite/releases/download/js%2FCu.evalInSandbox%2Fv1.00/moz-rewrite-js.xpi
+https://github.com/warren-bank/moz-rewrite/releases/tag/js%2FCu.evalInSandbox%2Fv1.01
+https://github.com/warren-bank/moz-rewrite/releases/download/js%2FCu.evalInSandbox%2Fv1.01/moz-rewrite-js.xpi
 
-release date       : December 18, 2014
+release date       : May 04, 2015
 size               : 62.9 kB
 compatibility      : Firefox 4.0 and later
 
