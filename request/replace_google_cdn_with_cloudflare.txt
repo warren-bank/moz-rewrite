@@ -1,0 +1,10 @@
+[
+  {
+    "url": /^https?:\/\/ajax.googleapis.com/i,
+    "headers": function() {
+      redirectTo(request.uri.href.replace("ajax.googleapis.com", "cdnjs.cloudflare.com"));
+      return {};
+    },
+    "stop":true
+  }
+]
