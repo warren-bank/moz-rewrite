@@ -541,12 +541,12 @@ var Shared_Sandbox = Base_Sandbox.extend({
 			"sha384"		: function(x){ return self.crypto('sha384', x); },
 			"sha512"		: function(x){ return self.crypto('sha512', x); },
 			"format_date"	: self.format_date,
-			"btoa"			: self.btoa,
-			"atob"			: self.atob,
+			"btoa"			: self.btoa.bind(self),
+			"atob"			: self.atob.bind(self),
 
 			// aliases
-			"base64_encode"	: self.btoa,
-			"base64_decode"	: self.atob
+			"base64_encode"	: self.btoa.bind(self),
+			"base64_decode"	: self.atob.bind(self)
 		});
 	},
 
@@ -583,7 +583,7 @@ var Shared_Sandbox = Base_Sandbox.extend({
 		hash		= ch.finish(false);
 
 		// convert the binary hash data to a hex string.
-		s			= [toHexString(hash.charCodeAt(i)) for (i in hash)].join("");
+		s			= hash.split('').map(function(c, i){ return toHexString(hash.charCodeAt(i)) }).join('');
 		return s;
 	},
 
@@ -1664,7 +1664,7 @@ var HTTP_Stream = Class.extend({
 
 			wm					= Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
 			win					= wm.getMostRecentWindow(null);
-			location			= win.content.location;
+			location			= win.document.location;
 
 			components			= {
 				"href"			: lc(location.href),
@@ -2067,7 +2067,7 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 
 			wm	= Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
 			win	= wm.getMostRecentWindow(null);
-			win.content.location = string_url;
+			win.document.location = string_url;
 		}
 		catch(e){
             self.log("(redirect_to|error): couldn't assign URL to window.location: " + e.message);

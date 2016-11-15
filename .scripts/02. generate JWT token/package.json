@@ -1,0 +1,10 @@
+{
+  "name": "FF-JWT-token",
+  "version": "1.0.0",
+  "dependencies": {
+    "jsonwebtoken": "*"
+  },
+  "scripts": {
+    "start": "npm install && node index.js"
+  }
+}

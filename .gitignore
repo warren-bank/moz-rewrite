@@ -1,1 +1,9 @@
-*.xpi
+.scripts/01. build xpi/*.xpi
+
+.scripts/02. generate JWT token/node_modules
+.scripts/02. generate JWT token/credentials.bat
+.scripts/02. generate JWT token/token.txt
+
+.scripts/03. sign xpi/status.txt
+.scripts/03. sign xpi/url.txt
+.scripts/03. sign xpi/*.xpi

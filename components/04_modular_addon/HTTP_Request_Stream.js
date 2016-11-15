@@ -112,7 +112,7 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 
 			wm	= Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
 			win	= wm.getMostRecentWindow(null);
-			win.content.location = string_url;
+			win.document.location = string_url;
 		}
 		catch(e){
             self.log("(redirect_to|error): couldn't assign URL to window.location: " + e.message);

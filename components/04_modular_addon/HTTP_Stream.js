@@ -412,7 +412,7 @@ var HTTP_Stream = Class.extend({
 
 			wm					= Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
 			win					= wm.getMostRecentWindow(null);
-			location			= win.content.location;
+			location			= win.document.location;
 
 			components			= {
 				"href"			: lc(location.href),

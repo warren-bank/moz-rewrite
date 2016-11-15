@@ -1,0 +1,37 @@
+after all that
+==============
+* Firefox 49 refuses to install the downloaded .xpi
+* "status.txt" (partial):
+    {
+        "guid": "moz-rewrite-js@warren-bank.github.com",
+        "active": false,
+        "automated_signing": false,
+        "passed_review": false,
+        "processed": true,
+        "reviewed": false,
+        "valid": true,
+        "validation_results": {
+            "errors": 0,
+            "success": false,
+            "warnings": 8,
+            "passed_auto_validation": false,
+        }
+    }
+* point is.. the downloaded .xpi hasn't been signed.
+  for whatever reason, "automated_signing" didn't occur.
+  the addon has been added to the queue (78th place) for manual review.
+* unacceptable..
+  this version was supposed to be only a quick test to see if the update would work.
+* workaround..
+    - installed "Developer Edition v51.0a2",
+    - about:config
+    - "xpinstall.signatures.required" = false
+* debugging:
+    - about:config
+    - "extensions.Moz-Rewrite.debug"  = true
+    - made a few quick changes to remove warnings/errors and get the code working again
+    - mission accomplished, but..
+    - I didn't do any regression tests to see if any of these changes break compatibility with older versions of FF
+* conclusions:
+    - I'll resubmit this update to AMO, and afterward..
+    - I'm so completely done with Firefox
