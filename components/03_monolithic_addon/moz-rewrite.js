@@ -1663,8 +1663,8 @@ var HTTP_Stream = Class.extend({
 			// https://developer.mozilla.org/en-US/docs/Web/API/Location
 
 			wm					= Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
-			win					= wm.getMostRecentWindow(null);
-			location			= win.document.location;
+			win					= wm.getMostRecentWindow("navigator:browser");
+			location			= win.content.location;
 
 			components			= {
 				"href"			: lc(location.href),
@@ -2066,8 +2066,8 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 			httpChannel.cancel(Cr.NS_BINDING_ABORTED);
 
 			wm	= Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
-			win	= wm.getMostRecentWindow(null);
-			win.document.location = string_url;
+			win	= wm.getMostRecentWindow("navigator:browser");
+			win.content.location = string_url;
 		}
 		catch(e){
             self.log("(redirect_to|error): couldn't assign URL to window.location: " + e.message);

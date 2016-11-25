@@ -411,8 +411,8 @@ var HTTP_Stream = Class.extend({
 			// https://developer.mozilla.org/en-US/docs/Web/API/Location
 
 			wm					= Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
-			win					= wm.getMostRecentWindow(null);
-			location			= win.document.location;
+			win					= wm.getMostRecentWindow("navigator:browser");
+			location			= win.content.location;
 
 			components			= {
 				"href"			: lc(location.href),
