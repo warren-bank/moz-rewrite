@@ -163,16 +163,24 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
       prepends a record of the current request to the `Output File`.<br>
       this record will be available for _replay_ via the ___view/replay saved requests___ dialog window.
 
-  * _request only_
+* _request only_
     * `redirectTo(string_URI)`<br>
-      hint: `window.location = string_URI`
+      HTTP redirection works for any matching request URL.<br>
+      When the matching request URL is the top-level page loading in a browser tab,<br>
+      * the HTTP request is cancelled
+      * `window.location = string_URI`
 
-      > for an example, check out the [recipe: `redirect search engine queries from Yahoo to Google`](https://github.com/warren-bank/moz-rewrite/blob/js/data/recipe-book/request/redirect%20search%20engine%20queries%20from%20Yahoo%20to%20Google.js)
+      When the matching request URL is a page resource that's referenced by a top-level page loading in a browser tab,<br>
+      * the HTTP request is redirected and the alternate resource is loaded in its place
+
+      For an example of top-level page redirection,<br>check out the [recipe: `redirect search engine queries from Yahoo to Google`](https://github.com/warren-bank/moz-rewrite/blob/js/data/recipe-book/request/redirect%20search%20engine%20queries%20from%20Yahoo%20to%20Google.js)
+
+      For an example that illustrates both top-level as well as resource redirection,<br>check out the [recipe: `redirect Google favicon`](https://github.com/warren-bank/moz-rewrite/blob/js/data/recipe-book/request/redirect%20Google%20favicon.js)
 
     * `cancel()`<br>
-      completely cancels the request
+      completely cancels the HTTP request.
 
-      > for an example, check out the [recipe: `light weight ad-blocker`](https://github.com/warren-bank/moz-rewrite/blob/js/data/recipe-book/request/light%20weight%20ad-blocker.js)
+      For an example,<br>check out the [recipe: `light weight ad-blocker`](https://github.com/warren-bank/moz-rewrite/blob/js/data/recipe-book/request/light%20weight%20ad-blocker.js)
 
   * _response only_
 

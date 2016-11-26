@@ -105,28 +105,44 @@ var HTTP_Request_Stream = HTTP_Stream.extend({
 
 	"redirect_to": function(httpChannel, string_url){
 		var self = this;
-		try {
-			var wm, win;
+		var request_URL, wm, win, activeDOMWindow_URL;
 
-			httpChannel.cancel(Cr.NS_BINDING_ABORTED);
+		request_URL = httpChannel.URI.spec;
 
-			wm	= Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
-			win	= wm.getMostRecentWindow("navigator:browser");
+		wm  = Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
+		win = wm.getMostRecentWindow("navigator:browser");
+		activeDOMWindow_URL = win.content.location.href;
 
-			/*
-			var $tabbrowser = win.document.getElementById("content")
-			var $browser    = $tabbrowser.selectedBrowser
-			var $win        = $browser.contentWindow.wrappedJSObject
-			var $doc        = $win.document
+		if (request_URL === activeDOMWindow_URL){
+			// html page
+			// =========
+			// cancel HTTP request, change tab's URL and reload
 
-			$doc.location = string_url
-			*/
-
-			win.content.location = string_url;
+			try {
+				httpChannel.cancel(Cr.NS_BINDING_ABORTED);
+				win.content.location = string_url;
+			}
+			catch(e){
+				self.log("(redirect_to|error): couldn't assign URL to window.location: " + e.message);
+			}
 		}
-		catch(e){
-            self.log("(redirect_to|error): couldn't assign URL to window.location: " + e.message);
-        }
+		else {
+			// page resource
+			// =============
+			// redirect HTTP request:
+			//     https://developer.mozilla.org/en-US/docs/Mozilla/Tech/XPCOM/Reference/Interface/nsIHttpChannel#redirectTo()
+
+			try {
+				var ioService, newURI;
+
+				ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
+				newURI = ioService.newURI(string_url, null, null);
+				httpChannel.redirectTo(newURI);
+			}
+			catch(e){
+				self.log("(redirect_to|error): couldn't redirect request httpChannel: " + e.message);
+			}
+		}
 	}
 
 });
