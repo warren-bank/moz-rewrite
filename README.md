@@ -163,7 +163,7 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
       prepends a record of the current request to the `Output File`.<br>
       this record will be available for _replay_ via the ___view/replay saved requests___ dialog window.
 
-* _request only_
+  * _request only_
     * `redirectTo(string_URI)`<br>
       HTTP redirection works for any matching request URL.<br>
       When the matching request URL is the top-level page loading in a browser tab,<br>
