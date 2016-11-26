@@ -532,6 +532,11 @@ var Shared_Sandbox = Base_Sandbox.extend({
 	"get_local_variables": function(){
 		this.debug('(get_local_variables|Shared_Sandbox|checkpoint|01)');
 		var self = this;
+		var btoa, atob, log;
+
+		btoa    = self.btoa.bind(self);
+		atob    = self.atob.bind(self);
+		log     = self.console_log.bind(self);
 
 		return this.combine_local_variables(this._super(), {
 			"md2"			: function(x){ return self.crypto('md2',    x); },
@@ -540,13 +545,15 @@ var Shared_Sandbox = Base_Sandbox.extend({
 			"sha256"		: function(x){ return self.crypto('sha256', x); },
 			"sha384"		: function(x){ return self.crypto('sha384', x); },
 			"sha512"		: function(x){ return self.crypto('sha512', x); },
+
+			"btoa"			: btoa,
+			"atob"			: atob,
 			"format_date"	: self.format_date,
-			"btoa"			: self.btoa.bind(self),
-			"atob"			: self.atob.bind(self),
+			"log"			: log,
 
 			// aliases
-			"base64_encode"	: self.btoa.bind(self),
-			"base64_decode"	: self.atob.bind(self)
+			"base64_encode"	: btoa,
+			"base64_decode"	: atob
 		});
 	},
 
@@ -650,6 +657,46 @@ var Shared_Sandbox = Base_Sandbox.extend({
 		var self = this;
 		var win  = self.get_hiddenDOMWindow();
 		return win.atob(x);
+	},
+
+	"get_activeDOMWindow": function(){
+		var wm, win, tabbrowser, browser, ActiveWindow;
+
+		wm				= Cc["@mozilla.org/appshell/window-mediator;1"].getService(Ci.nsIWindowMediator);
+		win				= wm.getMostRecentWindow("navigator:browser");
+		tabbrowser		= win.document.getElementById("content");
+		browser			= tabbrowser.selectedBrowser;
+		ActiveWindow	= browser.contentWindow;
+
+		return ActiveWindow;
+	},
+
+	"console_log": function(){
+		var self = this;
+		var win, console, args;
+
+		try {
+			win = self.get_activeDOMWindow();
+			win = win.wrappedJSObject ? win.wrappedJSObject : win;
+			if (win.console){
+				console = win.console;
+				args = [].slice.call(arguments);
+
+				//console.log('hello world');
+				// => 'hello world'
+
+				//args = ['hello world'];
+				//console.log.apply(console, args);
+				// => no output!?
+
+				// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Spread_operator
+				//   FF27+
+				console.log(...args);
+			}
+		}
+		catch(e){
+			self.log('(Shared_Sandbox|console_log|error): ' + e.message);
+		}
 	}
 
 });

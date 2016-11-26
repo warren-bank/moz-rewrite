@@ -148,6 +148,16 @@ Firefox add-on that functions as a light-weight (pseudo) rules-engine for easily
     * `sha512(string_value)`<br>
       returns the result of hashing the input string using the `sha512` crypto hash function
 
+    * `format_date(Date | parsable_date_string)`<br>
+      returns the date as a UTC formatted string
+
+    * `format_date(null, 1)`<br>
+      returns the __current__ date as a UTC formatted string
+
+    * `log()`<br>
+      for all usage patterns, refer to [_docs_](https://developer.mozilla.org/en-US/docs/Web/API/Console/log)<br>
+      _helpful tip:_ configure the javascript console to __"enable persistent logs"__
+
   * _both requests and responses_
     * `save()`<br>
       prepends a record of the current request to the `Output File`.<br>
