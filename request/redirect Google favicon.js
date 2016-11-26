@@ -2,10 +2,10 @@
     {
         "url" : new RegExp('^https?://www\.google\.com/images/branding/product/ico/googleg_lodp\.ico$', 'i'),
         "headers" : function(){
-			log('redirecting google favicon..');
+            log('redirecting google favicon..');
 
-			// from: https://www.google.com/images/branding/product/ico/googleg_lodp.ico
-			// to...
+            // from: https://www.google.com/images/branding/product/ico/googleg_lodp.ico
+            // to...
 
             var string_url = 'https://github.com/fluidicon.png';
 
