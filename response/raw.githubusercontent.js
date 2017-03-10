@@ -51,6 +51,9 @@
                 case 'jpeg':
                     set_type('image/jpeg');
                     break;
+                case 'png':
+                    set_type('image/png');
+                    break;
                 case 'svg':
                     set_type('image/svg+xml');
                     break;
@@ -79,6 +82,12 @@
                     break;
                 case 'weba':
                     set_type('audio/webm');
+                    break;
+                case 'mp3':
+                    set_type('audio/mpeg');
+                    break;
+                case 'wav':
+                    set_type('audio/wav');
                     break;
 
                 // group 3: less common
