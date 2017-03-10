@@ -115,6 +115,22 @@
                 case 'woff2':
                     set_type('font/woff2');
                     break;
+
+                // group 4: non-standard, used with 3rd party plugins
+                case 'swf':
+                    set_type('application/x-shockwave-flash');
+                    break;
+                case 'flv':
+                    set_type('video/x-flv');
+                    break;
+                case 'f4v':
+                case 'f4p':
+                    set_type('video/mp4');
+                    break;
+                case 'f4a':
+                case 'f4b':
+                    set_type('audio/mp4');
+                    break;
             }
             return $headers;
         }
