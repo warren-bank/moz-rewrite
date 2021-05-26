@@ -412,7 +412,7 @@ var Shared_Sandbox = Base_Sandbox.extend({
 		hash		= ch.finish(false);
 
 		// convert the binary hash data to a hex string.
-		s			= [toHexString(hash.charCodeAt(i)) for (i in hash)].join("");
+		s			= hash.split('').map(function(c, i){ return toHexString(hash.charCodeAt(i)) }).join('');
 		return s;
 	},
 
